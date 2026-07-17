@@ -26,7 +26,7 @@ If applicable, add screenshots to help explain your problem.
 **Environment**
 - OS: [e.g. Windows 11, macOS 14]
 - Browser: [e.g. Chrome 126, Firefox 127]
-- StreamHive audio mode: [Selection / Both-All / SmartVoiceSwitch]
+- StreamHive audio mode: [Selection / Both/All / SmartVoiceSwitch]
 - Number of streams in the grid: [e.g. 3]
 
 **Additional context**
