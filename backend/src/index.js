@@ -5,7 +5,7 @@ import crypto from 'node:crypto';
 import 'dotenv/config';
 
 const {
-  PORT = 3001,
+  PORT = 3000,
   FRONTEND_URL,
   TWITCH_CLIENT_ID,
   TWITCH_CLIENT_SECRET,
