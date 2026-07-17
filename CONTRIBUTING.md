@@ -52,7 +52,6 @@ Use a semantic prefix:
 git clone https://github.com/scr0ols/StreamHive.git
 cd StreamHive
 git checkout dev
-```
 
 > [!NOTE]
 > Full install/run instructions aren't available yet — the project isn't runnable end to end until the frontend and backend scaffolds land (Phase 0). Check the [Setup](README.md#setup) section of the README for current status.
