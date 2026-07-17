@@ -13,13 +13,6 @@ Full architecture, data model, and reasoning behind these choices are kept in lo
 
 ## Status
 
-<<<<<<< HEAD
-Early planning complete, implementation starting.
-
-## Setup
-
-Not yet runnable end to end. This section will be filled in as the backend and frontend scaffolds land (Phase 0 of the implementation plan).
-=======
 Phase 0, Day 2 done: frontend and backend scaffolded, Twitch OAuth
 login/callback round trip proven end to end against a throwaway page (no
 product UI yet). Day 3 (Postgres schema + template CRUD) is next.
@@ -51,7 +44,6 @@ Requires a Twitch app (Confidential client type) registered in the
 Sessions are in-memory on the backend for now (Day 2 spike), so they reset
 on every backend restart. This is replaced by Postgres-backed sessions on
 Day 3.
->>>>>>> origin/dev
 
 ## Branch workflow
 
