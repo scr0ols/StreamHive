@@ -1,0 +1,18 @@
+# Secrets, never committed (belt and suspenders, working docs and spikes
+# already live outside this repo entirely, see claude.md's Folder layout)
+.env
+.env.local
+*.pem
+*.crx
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Editor/OS
+.DS_Store
+.vscode/
+.idea/
