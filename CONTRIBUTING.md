@@ -50,7 +50,7 @@ Use a semantic prefix:
 
 ```bash
 git clone https://github.com/scr0ols/StreamHive.git
-cd StreamHive/App
+cd StreamHive
 git checkout dev
 ```
 
