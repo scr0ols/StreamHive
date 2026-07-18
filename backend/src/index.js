@@ -3,6 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import crypto from 'node:crypto';
 import 'dotenv/config';
+import { pool } from './db.js';
 
 const {
   PORT = 3000,
@@ -15,11 +16,37 @@ const {
 const app = express();
 app.use(cors({ origin: FRONTEND_URL, credentials: true }));
 app.use(cookieParser());
+app.use(express.json());
 
-// Day 2 spike: sessions and OAuth states live in memory, replaced by
-// Postgres-backed storage on Day 3 (see c-docs/PLAN.md section 3.2).
+// Sessions and OAuth states live in memory (auth-guard polish comes later
+// per c-docs/PLAN.md section 6, Day 3 note), they only map a session_id
+// cookie to a users.id. Users and templates themselves are Postgres-backed.
 const sessions = new Map();
 const pendingStates = new Set();
+
+function requireAuth(req, res, next) {
+  const userId = sessions.get(req.cookies.session_id);
+  if (!userId) {
+    return res.status(401).json({ error: 'Not logged in.' });
+  }
+  req.userId = userId;
+  next();
+}
+
+function serializeTemplate(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    channels: JSON.parse(row.channels),
+    audioMode: row.audio_mode,
+    activeChannel: row.active_channel,
+    volumes: row.volumes ? JSON.parse(row.volumes) : null,
+    chatBarOpen: Boolean(row.chat_bar_open),
+    isPublic: Boolean(row.is_public),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
 
 app.get('/auth/twitch/login', (req, res) => {
   const state = crypto.randomBytes(16).toString('hex');
@@ -74,15 +101,35 @@ app.get('/auth/twitch/callback', async (req, res) => {
   const { data } = await userResponse.json();
   const twitchUser = data[0];
 
+  const now = new Date().toISOString();
+  const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
+  const { rows } = await pool.query(
+    `INSERT INTO users (id, twitch_id, login, display_name, avatar_url, access_token, refresh_token, expires_at, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+     ON CONFLICT (twitch_id) DO UPDATE SET
+       login = EXCLUDED.login,
+       display_name = EXCLUDED.display_name,
+       avatar_url = EXCLUDED.avatar_url,
+       access_token = EXCLUDED.access_token,
+       refresh_token = EXCLUDED.refresh_token,
+       expires_at = EXCLUDED.expires_at
+     RETURNING id`,
+    [
+      crypto.randomUUID(),
+      twitchUser.id,
+      twitchUser.login,
+      twitchUser.display_name,
+      twitchUser.profile_image_url,
+      tokens.access_token,
+      tokens.refresh_token,
+      expiresAt,
+      now,
+    ],
+  );
+  const userId = rows[0].id;
+
   const sessionId = crypto.randomBytes(32).toString('hex');
-  sessions.set(sessionId, {
-    twitchId: twitchUser.id,
-    login: twitchUser.login,
-    displayName: twitchUser.display_name,
-    avatarUrl: twitchUser.profile_image_url,
-    accessToken: tokens.access_token,
-    refreshToken: tokens.refresh_token,
-  });
+  sessions.set(sessionId, userId);
 
   res.cookie('session_id', sessionId, {
     httpOnly: true,
@@ -92,21 +139,95 @@ app.get('/auth/twitch/callback', async (req, res) => {
   res.redirect(FRONTEND_URL);
 });
 
-app.get('/auth/me', (req, res) => {
-  const session = sessions.get(req.cookies.session_id);
-  if (!session) {
-    return res.status(401).json({ error: 'Not logged in.' });
-  }
+app.get('/auth/me', requireAuth, async (req, res) => {
+  const { rows } = await pool.query(
+    'SELECT login, display_name, avatar_url FROM users WHERE id = $1',
+    [req.userId],
+  );
+  const user = rows[0];
   res.json({
-    login: session.login,
-    displayName: session.displayName,
-    avatarUrl: session.avatarUrl,
+    login: user.login,
+    displayName: user.display_name,
+    avatarUrl: user.avatar_url,
   });
 });
 
 app.post('/auth/logout', (req, res) => {
   sessions.delete(req.cookies.session_id);
   res.clearCookie('session_id');
+  res.status(204).end();
+});
+
+app.get('/api/templates', requireAuth, async (req, res) => {
+  const { rows } = await pool.query(
+    'SELECT * FROM templates WHERE user_id = $1 ORDER BY updated_at DESC',
+    [req.userId],
+  );
+  res.json(rows.map(serializeTemplate));
+});
+
+app.post('/api/templates', requireAuth, async (req, res) => {
+  const { name, channels, audioMode, activeChannel, volumes, chatBarOpen } = req.body;
+  const now = new Date().toISOString();
+  const { rows } = await pool.query(
+    `INSERT INTO templates (id, user_id, name, channels, audio_mode, active_channel, volumes, chat_bar_open, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9)
+     RETURNING *`,
+    [
+      crypto.randomUUID(),
+      req.userId,
+      name,
+      JSON.stringify(channels),
+      audioMode,
+      activeChannel ?? null,
+      volumes ? JSON.stringify(volumes) : null,
+      chatBarOpen ? 1 : 0,
+      now,
+    ],
+  );
+  res.status(201).json(serializeTemplate(rows[0]));
+});
+
+app.get('/api/templates/:id', requireAuth, async (req, res) => {
+  const { rows } = await pool.query(
+    'SELECT * FROM templates WHERE id = $1 AND user_id = $2',
+    [req.params.id, req.userId],
+  );
+  if (!rows[0]) return res.status(404).json({ error: 'Not found.' });
+  res.json(serializeTemplate(rows[0]));
+});
+
+app.put('/api/templates/:id', requireAuth, async (req, res) => {
+  const { name, channels, audioMode, activeChannel, volumes, chatBarOpen } = req.body;
+  const now = new Date().toISOString();
+  const { rows } = await pool.query(
+    `UPDATE templates
+     SET name = $1, channels = $2, audio_mode = $3, active_channel = $4,
+         volumes = $5, chat_bar_open = $6, updated_at = $7
+     WHERE id = $8 AND user_id = $9
+     RETURNING *`,
+    [
+      name,
+      JSON.stringify(channels),
+      audioMode,
+      activeChannel ?? null,
+      volumes ? JSON.stringify(volumes) : null,
+      chatBarOpen ? 1 : 0,
+      now,
+      req.params.id,
+      req.userId,
+    ],
+  );
+  if (!rows[0]) return res.status(404).json({ error: 'Not found.' });
+  res.json(serializeTemplate(rows[0]));
+});
+
+app.delete('/api/templates/:id', requireAuth, async (req, res) => {
+  const { rowCount } = await pool.query(
+    'DELETE FROM templates WHERE id = $1 AND user_id = $2',
+    [req.params.id, req.userId],
+  );
+  if (!rowCount) return res.status(404).json({ error: 'Not found.' });
   res.status(204).end();
 });
 

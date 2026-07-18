@@ -13,15 +13,19 @@ Full architecture, data model, and reasoning behind these choices are kept in lo
 
 ## Status
 
-Phase 0, Day 2 done: frontend and backend scaffolded, Twitch OAuth
-login/callback round trip proven end to end against a throwaway page (no
-product UI yet). Day 3 (Postgres schema + template CRUD) is next.
+Phase 0 done: frontend and backend scaffolded, Twitch OAuth login/callback
+round trip proven end to end (Day 2), Postgres schema (`users`, `templates`)
+on Neon plus full `/api/templates` CRUD proven end to end (Day 3), still
+against a throwaway page, no product UI yet. Phase 1 (the actual grid UI)
+is next.
 
 ## Setup
 
 Requires a Twitch app (Confidential client type) registered in the
 [Twitch Developer Console](https://dev.twitch.tv/console), with
-`http://localhost:3000/auth/twitch/callback` as a registered redirect URI.
+`http://localhost:3000/auth/twitch/callback` as a registered redirect URI,
+and a Postgres database (this project uses [Neon](https://neon.tech)'s free
+tier).
 
 **Backend** (`backend/`):
 
@@ -32,6 +36,7 @@ Requires a Twitch app (Confidential client type) registered in the
    TWITCH_CLIENT_ID=<your client id>
    TWITCH_CLIENT_SECRET=<your client secret>
    TWITCH_REDIRECT_URI=http://localhost:3000/auth/twitch/callback
+   DATABASE_URL=<your Postgres connection string>
    ```
 2. `npm install`
 3. `npm run dev`
@@ -41,9 +46,9 @@ Requires a Twitch app (Confidential client type) registered in the
 1. `npm install`
 2. `npm run dev`, then open `http://localhost:5173`
 
-Sessions are in-memory on the backend for now (Day 2 spike), so they reset
-on every backend restart. This is replaced by Postgres-backed sessions on
-Day 3.
+Sessions are in-memory on the backend for now (they just map a session
+cookie to a `users.id`), so everyone has to re-login on every backend
+restart. Users and templates themselves are persisted in Postgres.
 
 ## Branch workflow
 
