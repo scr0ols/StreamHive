@@ -13,11 +13,9 @@ Full architecture, data model, and reasoning behind these choices are kept in lo
 
 ## Status
 
-Phase 0 done: frontend and backend scaffolded, Twitch OAuth login/callback
-round trip proven end to end (Day 2), Postgres schema (`users`, `templates`)
-on Neon plus full `/api/templates` CRUD proven end to end (Day 3), still
-against a throwaway page, no product UI yet. Phase 1 (the actual grid UI)
-is next.
+Twitch OAuth login and Postgres-backed layout templates (save, list, edit,
+delete) work end to end, but only through a throwaway test page, there's no
+product UI yet. The grid UI itself is next.
 
 ## Setup
 
