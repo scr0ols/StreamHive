@@ -4,6 +4,8 @@ import AddChannelForm from './components/AddChannelForm'
 import AudioModeControl from './components/AudioModeControl'
 import VideoGrid from './components/VideoGrid'
 import ChatBar from './components/ChatBar'
+import TemplateManager from './components/TemplateManager'
+import FollowedLive from './components/FollowedLive'
 import { IconTwitch, LogoMark } from './components/icons'
 import './App.css'
 
@@ -14,6 +16,13 @@ function App() {
   const [checked, setChecked] = useState(false)
   const [loginPrompt, setLoginPrompt] = useState(null)
   const [state, dispatch] = useReducer(gridReducer, initialGridState)
+
+  // Dev-only hook: lets browser automation drive the reducer directly (e.g.
+  // to exercise SET_STATE without an authenticated session). Stripped from
+  // production builds.
+  useEffect(() => {
+    if (import.meta.env.DEV) window.__streamhive = { dispatch }
+  }, [])
 
   useEffect(() => {
     fetch(`${BACKEND_URL}/auth/me`, { credentials: 'include' })
@@ -63,6 +72,33 @@ function App() {
     window.open(`https://www.twitch.tv/${channel.loginName}`, '_blank', 'noopener')
   }
 
+  // Template load: validate the saved logins against Helix first (PLAN.md
+  // edge case 3); unresolvable ones render a "channel not found" panel. If
+  // the validation call itself fails, load anyway without flags.
+  async function loadTemplate(template) {
+    const orderedChannels = [...template.channels].sort((a, b) => a.order - b.order)
+    const logins = orderedChannels.map((c) => c.loginName)
+
+    let foundSet = null
+    const res = await fetch(`${BACKEND_URL}/api/resolve-channels?logins=${logins.join(',')}`).catch(() => null)
+    if (res?.ok) {
+      const { found } = await res.json()
+      foundSet = new Set(found)
+    }
+
+    dispatch({
+      type: 'SET_STATE',
+      channels: orderedChannels.map((c) => ({
+        loginName: c.loginName,
+        exists: foundSet ? foundSet.has(c.loginName) : undefined,
+      })),
+      audioMode: template.audioMode,
+      activeChannel: template.activeChannel,
+      volumes: template.volumes,
+      chatBarOpen: template.chatBarOpen,
+    })
+  }
+
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -72,6 +108,13 @@ function App() {
         </div>
         {checked && (
           <div className="auth-bar">
+            {user && (
+              <FollowedLive
+                channels={state.channels}
+                onAdd={(loginName) => dispatch({ type: 'ADD_CHANNEL', loginName })}
+                onSessionExpired={() => setUser(null)}
+              />
+            )}
             {user ? (
               <>
                 <img className="auth-avatar" src={user.avatarUrl} alt="" width={28} height={28} />
@@ -95,10 +138,19 @@ function App() {
           channelCount={state.channels.length}
           onAdd={(loginName) => dispatch({ type: 'ADD_CHANNEL', loginName })}
         />
-        <AudioModeControl
-          audioMode={state.audioMode}
-          onSetAudioMode={(mode) => dispatch({ type: 'SET_AUDIO_MODE', mode })}
-        />
+        <div className="toolbar-right">
+          <TemplateManager
+            user={user}
+            gridState={state}
+            onLoadTemplate={loadTemplate}
+            onLogin={login}
+            onSessionExpired={() => setUser(null)}
+          />
+          <AudioModeControl
+            audioMode={state.audioMode}
+            onSetAudioMode={(mode) => dispatch({ type: 'SET_AUDIO_MODE', mode })}
+          />
+        </div>
       </div>
 
       <div className="app-main">

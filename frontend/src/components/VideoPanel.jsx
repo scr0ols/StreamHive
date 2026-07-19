@@ -23,6 +23,8 @@ export default function VideoPanel({
   const playerRef = useRef(null)
 
   useEffect(() => {
+    if (channel.exists === false) return undefined
+
     let cancelled = false
     playerRef.current = null
 
@@ -68,6 +70,33 @@ export default function VideoPanel({
   useEffect(() => {
     playerRef.current?.setVolume(volume / 100)
   }, [volume])
+
+  // Distinct panel for a template channel that no longer resolves on Twitch
+  // (renamed/banned, PLAN.md edge case 3): no embed, no actions, just remove.
+  if (channel.exists === false) {
+    return (
+      <div className="video-panel notfound" style={gridStyle}>
+        <div className="video-panel-notfound">
+          <span className="video-panel-overlay-name">{channel.loginName}</span>
+          <span>channel not found on Twitch</span>
+        </div>
+        <div className="video-panel-bar">
+          <span className="video-panel-name">{channel.loginName}</span>
+          <div className="video-panel-actions">
+            <button
+              type="button"
+              className="panel-btn icon-only remove-btn"
+              onClick={() => onRemove(channel.id)}
+              title={`Remove ${channel.loginName} from the grid`}
+              aria-label={`Remove ${channel.loginName} from the grid`}
+            >
+              <IconX />
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className={`video-panel${focused ? ' focused' : ''}`} style={gridStyle}>

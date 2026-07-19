@@ -12,6 +12,42 @@ export const initialGridState = {
 
 export function gridReducer(state, action) {
   switch (action.type) {
+    // Loading a template: channels arrive as [{ loginName, exists }] in order,
+    // volumes/activeChannel keyed by loginName (the template format), and get
+    // fresh session ids minted here. exists === false marks a login that no
+    // longer resolves on Twitch (renamed/banned); it stays listed so the user
+    // can remove it, but is skipped when picking the active audio channel.
+    case 'SET_STATE': {
+      const channels = action.channels.map((c) => ({
+        id: crypto.randomUUID(),
+        loginName: c.loginName,
+        addedAt: Date.now(),
+        online: undefined,
+        exists: c.exists,
+      }))
+      const idByLogin = Object.fromEntries(channels.map((c) => [c.loginName, c.id]))
+
+      const volumes = {}
+      for (const [login, volume] of Object.entries(action.volumes ?? {})) {
+        if (idByLogin[login]) volumes[idByLogin[login]] = volume
+      }
+
+      const activeAudioChannelId =
+        (action.activeChannel && idByLogin[action.activeChannel]) ??
+        channels.find((c) => c.exists !== false)?.id ??
+        channels[0]?.id ??
+        null
+
+      return {
+        channels,
+        audioMode: action.audioMode,
+        activeAudioChannelId,
+        volumes,
+        chatBarOpen: action.chatBarOpen,
+        activeChatChannelId: activeAudioChannelId,
+      }
+    }
+
     case 'ADD_CHANNEL': {
       const loginName = action.loginName.trim().toLowerCase()
       if (!loginName) return state
