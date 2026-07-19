@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 import crypto from 'node:crypto';
 import 'dotenv/config';
 import { pool } from './db.js';
+import { getAppAccessToken } from './twitchAppToken.js';
 
 const {
   PORT = 3000,
@@ -156,6 +157,35 @@ app.post('/auth/logout', (req, res) => {
   sessions.delete(req.cookies.session_id);
   res.clearCookie('session_id');
   res.status(204).end();
+});
+
+app.get('/api/stream-status', async (req, res) => {
+  const logins = String(req.query.logins || '')
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean)
+    .slice(0, 100);
+
+  if (logins.length === 0) {
+    return res.json({ online: [] });
+  }
+
+  const token = await getAppAccessToken();
+  const streamsUrl = new URL('https://api.twitch.tv/helix/streams');
+  logins.forEach((login) => streamsUrl.searchParams.append('user_login', login));
+
+  const streamsResponse = await fetch(streamsUrl, {
+    headers: {
+      'Client-Id': TWITCH_CLIENT_ID,
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!streamsResponse.ok) {
+    const body = await streamsResponse.text();
+    return res.status(502).json({ error: `Helix streams lookup failed: ${body}` });
+  }
+  const { data } = await streamsResponse.json();
+  res.json({ online: data.map((stream) => stream.user_login.toLowerCase()) });
 });
 
 app.get('/api/templates', requireAuth, async (req, res) => {
