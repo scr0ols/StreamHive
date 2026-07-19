@@ -20,9 +20,16 @@ detection via a backend Helix poll, a chat bar with one always-mounted tab
 per channel (chat follows the active audio channel until manually
 overridden), and native per-panel actions (follow, donate, channel link).
 Twitch OAuth login is wired into the app shell and gates the follow action;
-anonymous read-only viewing works without login. Postgres-backed layout
-templates (save, list, edit, delete) work end to end on the backend; the
-template UI is next (Phase 2).
+anonymous read-only viewing works without login.
+
+Account features (Phase 2): saving/loading/deleting named grid templates
+from the toolbar (login-gated, with channel validation on load — renamed or
+banned channels render a "channel not found" panel), and a "Following"
+list showing which channels the logged-in user follows that are live right
+now, with one-click add-to-grid (requires the `user:read:follows` OAuth
+scope; users who logged in before the scope change are re-prompted to log
+in). Twitch tokens are refreshed server-side on expiry; nothing from the
+Twitch API is ever persisted.
 
 ## Setup
 
