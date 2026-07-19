@@ -5,6 +5,7 @@ import crypto from 'node:crypto';
 import 'dotenv/config';
 import { pool } from './db.js';
 import { getAppAccessToken } from './twitchAppToken.js';
+import { getUserAccessToken, ReloginRequiredError } from './twitchUserToken.js';
 
 const {
   PORT = 3000,
@@ -57,7 +58,8 @@ app.get('/auth/twitch/login', (req, res) => {
   authorizeUrl.searchParams.set('client_id', TWITCH_CLIENT_ID);
   authorizeUrl.searchParams.set('redirect_uri', TWITCH_REDIRECT_URI);
   authorizeUrl.searchParams.set('response_type', 'code');
-  authorizeUrl.searchParams.set('scope', '');
+  // user:read:follows powers /api/followed-streams; the only scope we request.
+  authorizeUrl.searchParams.set('scope', 'user:read:follows');
   authorizeUrl.searchParams.set('state', state);
 
   res.redirect(authorizeUrl.toString());
@@ -180,12 +182,102 @@ app.get('/api/stream-status', async (req, res) => {
       Authorization: `Bearer ${token}`,
     },
   });
+  if (streamsResponse.status === 429) {
+    return res.status(429).json({ error: 'Twitch rate limit hit.' });
+  }
   if (!streamsResponse.ok) {
     const body = await streamsResponse.text();
     return res.status(502).json({ error: `Helix streams lookup failed: ${body}` });
   }
   const { data } = await streamsResponse.json();
   res.json({ online: data.map((stream) => stream.user_login.toLowerCase()) });
+});
+
+// Which of these logins exist on Twitch right now? Used to validate template
+// channels on load (PLAN.md edge case 3). Public data, app token, no auth.
+app.get('/api/resolve-channels', async (req, res) => {
+  const logins = String(req.query.logins || '')
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean)
+    .slice(0, 100);
+
+  if (logins.length === 0) {
+    return res.json({ found: [] });
+  }
+
+  const token = await getAppAccessToken();
+  const usersUrl = new URL('https://api.twitch.tv/helix/users');
+  logins.forEach((login) => usersUrl.searchParams.append('login', login));
+
+  const usersResponse = await fetch(usersUrl, {
+    headers: {
+      'Client-Id': TWITCH_CLIENT_ID,
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (usersResponse.status === 429) {
+    return res.status(429).json({ error: 'Twitch rate limit hit.' });
+  }
+  if (!usersResponse.ok) {
+    const body = await usersResponse.text();
+    return res.status(502).json({ error: `Helix users lookup failed: ${body}` });
+  }
+  const { data } = await usersResponse.json();
+  res.json({ found: data.map((user) => user.login.toLowerCase()) });
+});
+
+// Live channels the logged-in user follows, straight from Helix with the
+// user's own token (requires the user:read:follows scope). Passed through,
+// never persisted.
+app.get('/api/followed-streams', requireAuth, async (req, res) => {
+  function forceRelogin() {
+    sessions.delete(req.cookies.session_id);
+    res.clearCookie('session_id');
+    res.status(401).json({ error: 'Session expired, log in again.' });
+  }
+
+  let token;
+  try {
+    token = await getUserAccessToken(req.userId);
+  } catch (err) {
+    if (err instanceof ReloginRequiredError) return forceRelogin();
+    throw err;
+  }
+
+  const { rows } = await pool.query('SELECT twitch_id FROM users WHERE id = $1', [req.userId]);
+  const streamsUrl = new URL('https://api.twitch.tv/helix/streams/followed');
+  streamsUrl.searchParams.set('user_id', rows[0].twitch_id);
+  streamsUrl.searchParams.set('first', '100');
+
+  const streamsResponse = await fetch(streamsUrl, {
+    headers: {
+      'Client-Id': TWITCH_CLIENT_ID,
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  // 401/403 with a live token means it predates the user:read:follows scope
+  // (or access was revoked): force a re-login so the scope gets granted.
+  if (streamsResponse.status === 401 || streamsResponse.status === 403) {
+    return forceRelogin();
+  }
+  if (streamsResponse.status === 429) {
+    return res.status(429).json({ error: 'Twitch rate limit hit.' });
+  }
+  if (!streamsResponse.ok) {
+    const body = await streamsResponse.text();
+    return res.status(502).json({ error: `Helix followed-streams lookup failed: ${body}` });
+  }
+  const { data } = await streamsResponse.json();
+  res.json({
+    streams: data.map((s) => ({
+      loginName: s.user_login.toLowerCase(),
+      displayName: s.user_name,
+      title: s.title,
+      gameName: s.game_name,
+      viewerCount: s.viewer_count,
+    })),
+  });
 });
 
 app.get('/api/templates', requireAuth, async (req, res) => {
