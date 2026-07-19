@@ -13,9 +13,16 @@ Full architecture, data model, and reasoning behind these choices are kept in lo
 
 ## Status
 
-Twitch OAuth login and Postgres-backed layout templates (save, list, edit,
-delete) work end to end, but only through a throwaway test page, there's no
-product UI yet. The grid UI itself is next.
+The core viewing experience works end to end against real Twitch channels:
+a 2–5 channel video grid with add/remove, both audio modes (Selection with
+focus-follows-audio layout, Both/All with per-panel volume), online/offline
+detection via a backend Helix poll, a chat bar with one always-mounted tab
+per channel (chat follows the active audio channel until manually
+overridden), and native per-panel actions (follow, donate, channel link).
+Twitch OAuth login is wired into the app shell and gates the follow action;
+anonymous read-only viewing works without login. Postgres-backed layout
+templates (save, list, edit, delete) work end to end on the backend; the
+template UI is next (Phase 2).
 
 ## Setup
 
