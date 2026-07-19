@@ -30,6 +30,7 @@ export default function TemplateManager({ user, gridState, onLoadTemplate, onLog
   // Explicit save state per PLAN.md edge case 10: saving/saved/error, never
   // assume success.
   const [saveStatus, setSaveStatus] = useState('idle')
+  const [saveError, setSaveError] = useState('')
   const [loadingId, setLoadingId] = useState(null)
 
   const canSave = gridState.channels.length >= MIN_CHANNELS
@@ -58,6 +59,7 @@ export default function TemplateManager({ user, gridState, onLoadTemplate, onLog
     e.preventDefault()
     if (!saveName.trim() || !canSave) return
     setSaveStatus('saving')
+    setSaveError('')
     const res = await fetch(`${BACKEND_URL}/api/templates`, {
       method: 'POST',
       credentials: 'include',
@@ -70,6 +72,8 @@ export default function TemplateManager({ user, gridState, onLoadTemplate, onLog
       return
     }
     if (!res?.ok) {
+      const body = await res?.json().catch(() => null)
+      setSaveError(body?.error ?? 'Save failed, try again.')
       setSaveStatus('error')
       return
     }
@@ -139,7 +143,7 @@ export default function TemplateManager({ user, gridState, onLoadTemplate, onLog
                   </button>
                 </form>
                 {saveStatus === 'saved' && <p className="template-status ok">Saved.</p>}
-                {saveStatus === 'error' && <p className="template-status err">Save failed, try again.</p>}
+                {saveStatus === 'error' && <p className="template-status err">{saveError}</p>}
                 {!canSave && <p className="template-status">Add at least {MIN_CHANNELS} channels to save.</p>}
 
                 <div className="template-list">

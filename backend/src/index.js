@@ -193,6 +193,37 @@ app.get('/api/stream-status', async (req, res) => {
   res.json({ online: data.map((stream) => stream.user_login.toLowerCase()) });
 });
 
+// Top live streams on Twitch, ordered by viewers by Helix. Public data, app
+// token, no auth required and never persisted.
+app.get('/api/trending-streams', async (req, res) => {
+  const streamsUrl = new URL('https://api.twitch.tv/helix/streams');
+  streamsUrl.searchParams.set('first', '12');
+
+  const streamsResponse = await fetch(streamsUrl, {
+    headers: {
+      'Client-Id': TWITCH_CLIENT_ID,
+      Authorization: `Bearer ${await getAppAccessToken()}`,
+    },
+  });
+  if (streamsResponse.status === 429) {
+    return res.status(429).json({ error: 'Twitch rate limit hit.' });
+  }
+  if (!streamsResponse.ok) {
+    const body = await streamsResponse.text();
+    return res.status(502).json({ error: `Helix trending-streams lookup failed: ${body}` });
+  }
+  const { data } = await streamsResponse.json();
+  res.json({
+    streams: data.map((s) => ({
+      loginName: s.user_login.toLowerCase(),
+      displayName: s.user_name,
+      title: s.title,
+      gameName: s.game_name,
+      viewerCount: s.viewer_count,
+    })),
+  });
+});
+
 // Which of these logins exist on Twitch right now? Used to validate template
 // channels on load (PLAN.md edge case 3). Public data, app token, no auth.
 app.get('/api/resolve-channels', async (req, res) => {
@@ -351,6 +382,15 @@ app.delete('/api/templates/:id', requireAuth, async (req, res) => {
   );
   if (!rowCount) return res.status(404).json({ error: 'Not found.' });
   res.status(204).end();
+});
+
+// Express 5 forwards rejected async route handlers here automatically.
+// Without this, an unhandled error returns Express's default HTML error
+// page, which the frontend's `!res.ok` check treats as an opaque failure
+// with no diagnostic. Log the real cause and return JSON instead.
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({ error: 'Internal server error.' });
 });
 
 app.listen(PORT, () => {

@@ -101,10 +101,27 @@ function App() {
 
   return (
     <div className="app-shell">
-      <header className="app-header">
+      <header className="app-topbar">
         <div className="brand">
           <LogoMark />
           <span className="brand-name">StreamHive</span>
+        </div>
+        <div className="topbar-controls">
+          <AddChannelForm
+            channelCount={state.channels.length}
+            onAdd={(loginName) => dispatch({ type: 'ADD_CHANNEL', loginName })}
+          />
+          <TemplateManager
+            user={user}
+            gridState={state}
+            onLoadTemplate={loadTemplate}
+            onLogin={login}
+            onSessionExpired={() => setUser(null)}
+          />
+          <AudioModeControl
+            audioMode={state.audioMode}
+            onSetAudioMode={(mode) => dispatch({ type: 'SET_AUDIO_MODE', mode })}
+          />
         </div>
         {checked && (
           <div className="auth-bar">
@@ -132,26 +149,6 @@ function App() {
           </div>
         )}
       </header>
-
-      <div className="app-toolbar">
-        <AddChannelForm
-          channelCount={state.channels.length}
-          onAdd={(loginName) => dispatch({ type: 'ADD_CHANNEL', loginName })}
-        />
-        <div className="toolbar-right">
-          <TemplateManager
-            user={user}
-            gridState={state}
-            onLoadTemplate={loadTemplate}
-            onLogin={login}
-            onSessionExpired={() => setUser(null)}
-          />
-          <AudioModeControl
-            audioMode={state.audioMode}
-            onSetAudioMode={(mode) => dispatch({ type: 'SET_AUDIO_MODE', mode })}
-          />
-        </div>
-      </div>
 
       <div className="app-main">
         <main className="stage">

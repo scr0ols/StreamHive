@@ -8,36 +8,45 @@ function formatViewers(n) {
   return n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n)
 }
 
-// Live channels the logged-in user follows on Twitch, with one-click
-// add-to-grid. Fetched fresh on every open, kept in memory only (the
-// backend never persists Twitch data either).
+// Live followed channels plus Twitch's top viewer-count streams. Both lists
+// are fetched fresh on open and remain in memory only.
 export default function FollowedLive({ channels, onAdd, onSessionExpired }) {
   const [open, setOpen] = useState(false)
-  const [streams, setStreams] = useState(null) // null = loading
+  const [followedStreams, setFollowedStreams] = useState(null)
+  const [trendingStreams, setTrendingStreams] = useState(null)
   const [error, setError] = useState(null)
 
-  const inGrid = new Set(channels.map((c) => c.loginName))
+  const inGrid = new Set(channels.map((channel) => channel.loginName))
   const atCap = channels.length >= MAX_CHANNELS
 
   async function fetchStreams() {
-    setStreams(null)
+    setFollowedStreams(null)
+    setTrendingStreams(null)
     setError(null)
-    const res = await fetch(`${BACKEND_URL}/api/followed-streams`, { credentials: 'include' }).catch(() => null)
-    if (res?.status === 401) {
+
+    const [followedRes, trendingRes] = await Promise.all([
+      fetch(`${BACKEND_URL}/api/followed-streams`, { credentials: 'include' }).catch(() => null),
+      fetch(`${BACKEND_URL}/api/trending-streams`).catch(() => null),
+    ])
+
+    if (followedRes?.status === 401) {
       setOpen(false)
       onSessionExpired()
       return
     }
-    if (res?.status === 429) {
+    if (followedRes?.status === 429 || trendingRes?.status === 429) {
       setError('Twitch is rate limiting us, try again shortly.')
       return
     }
-    if (!res?.ok) {
-      setError("Couldn't load your followed channels.")
+    if (!followedRes?.ok || !trendingRes?.ok) {
+      setError("Couldn't load Online now.")
       return
     }
-    const { streams: data } = await res.json()
-    setStreams(data)
+
+    const [{ streams: followed }, { streams: trending }] = await Promise.all([followedRes.json(), trendingRes.json()])
+    const followedLogins = new Set(followed.map((stream) => stream.loginName))
+    setFollowedStreams(followed)
+    setTrendingStreams(trending.filter((stream) => !followedLogins.has(stream.loginName)))
   }
 
   function toggleOpen() {
@@ -50,51 +59,63 @@ export default function FollowedLive({ channels, onAdd, onSessionExpired }) {
     <div className="dropdown">
       <button type="button" className="btn btn-ghost" onClick={toggleOpen} aria-expanded={open}>
         <IconHeart />
-        <span>Following</span>
+        <span>Online now</span>
         <IconChevronDown size={13} />
       </button>
 
       {open && (
         <>
           <div className="dropdown-backdrop" onClick={() => setOpen(false)} />
-          <div className="dropdown-panel">
+          <div className="dropdown-panel online-now-panel">
             {error && <p className="template-status err">{error}</p>}
-            {!error && streams === null && <p className="template-status">Loading…</p>}
-            {streams?.length === 0 && (
-              <p className="template-status">None of the channels you follow are live right now.</p>
+            {!error && followedStreams === null && <p className="template-status">Loading…</p>}
+            {followedStreams && (
+              <section className="online-section" aria-label="Following live">
+                <h2>Following live</h2>
+                {followedStreams.length === 0 && <p className="template-status">Nobody you follow is live right now.</p>}
+                {followedStreams.map((stream) => (
+                  <StreamRow key={stream.loginName} stream={stream} inGrid={inGrid} atCap={atCap} onAdd={onAdd} />
+                ))}
+              </section>
             )}
-            {streams?.map((s) => (
-              <div key={s.loginName} className="followed-row">
-                <div className="followed-row-info">
-                  <span className="followed-row-name">
-                    <span className="live-dot" />
-                    {s.displayName}
-                  </span>
-                  <span className="followed-row-meta" title={s.title}>
-                    {s.gameName || 'Streaming'} · {formatViewers(s.viewerCount)} viewers
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-small"
-                  disabled={inGrid.has(s.loginName) || atCap}
-                  onClick={() => onAdd(s.loginName)}
-                  title={
-                    inGrid.has(s.loginName)
-                      ? 'Already in the grid'
-                      : atCap
-                        ? '5-channel max reached'
-                        : `Add ${s.displayName} to the grid`
-                  }
-                >
-                  <IconPlus size={13} />
-                  <span>{inGrid.has(s.loginName) ? 'Added' : 'Add'}</span>
-                </button>
-              </div>
-            ))}
+            {trendingStreams && (
+              <section className="online-section" aria-label="Trending live">
+                <h2>Trending live</h2>
+                {trendingStreams.map((stream) => (
+                  <StreamRow key={stream.loginName} stream={stream} inGrid={inGrid} atCap={atCap} onAdd={onAdd} />
+                ))}
+              </section>
+            )}
           </div>
         </>
       )}
+    </div>
+  )
+}
+
+function StreamRow({ stream, inGrid, atCap, onAdd }) {
+  const added = inGrid.has(stream.loginName)
+  return (
+    <div className="followed-row">
+      <div className="followed-row-info">
+        <span className="followed-row-name">
+          <span className="live-dot" />
+          {stream.displayName}
+        </span>
+        <span className="followed-row-meta" title={stream.title}>
+          {stream.gameName || 'Streaming'} · {formatViewers(stream.viewerCount)} viewers
+        </span>
+      </div>
+      <button
+        type="button"
+        className="btn btn-ghost btn-small"
+        disabled={added || atCap}
+        onClick={() => onAdd(stream.loginName)}
+        title={added ? 'Already in the grid' : atCap ? '5-channel max reached' : `Add ${stream.displayName} to the grid`}
+      >
+        <IconPlus size={13} />
+        <span>{added ? 'Added' : 'Add'}</span>
+      </button>
     </div>
   )
 }

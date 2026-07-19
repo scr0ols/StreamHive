@@ -5,12 +5,12 @@
   min-height: 0;
 }
 
-/* Header */
+/* Top bar */
 
-.app-header {
+.app-topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 16px;
   padding: 10px 16px;
   background: var(--bg-elev);
   border-bottom: 1px solid var(--border);
@@ -29,10 +29,18 @@
   letter-spacing: -0.01em;
 }
 
+.topbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
 .auth-bar {
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-left: auto;
 }
 
 .auth-avatar {
@@ -45,19 +53,6 @@
   font-size: 14px;
   font-weight: 600;
   color: var(--text-h);
-}
-
-/* Toolbar */
-
-.app-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding: 10px 16px;
-  background: var(--bg-elev);
-  border-bottom: 1px solid var(--border);
 }
 
 .add-channel-form {
@@ -447,13 +442,7 @@
   border: 0;
 }
 
-/* Dropdown panels (Templates, Following) */
-
-.toolbar-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
+/* Dropdown panels (Templates, Online now) */
 
 .dropdown {
   position: relative;
@@ -479,6 +468,23 @@
   background: var(--bg-elev);
   box-shadow: var(--shadow);
   animation: pop-in 0.15s ease;
+}
+
+.online-now-panel {
+  width: 340px;
+}
+
+.online-section + .online-section {
+  margin-top: 12px;
+}
+
+.online-section h2 {
+  margin: 2px 4px 6px;
+  color: var(--text-h);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .dropdown-empty {
@@ -652,6 +658,15 @@
 /* Narrow screens */
 
 @media (max-width: 900px) {
+  .app-topbar {
+    flex-wrap: wrap;
+  }
+
+  .topbar-controls {
+    order: 3;
+    width: 100%;
+  }
+
   .chat-bar,
   .chat-bar-body {
     width: 280px;
