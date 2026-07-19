@@ -373,6 +373,12 @@
   visibility: hidden;
 }
 
+/* visibility is overridable by descendants: .chat-panel.visible would
+   re-reveal itself inside the hidden body, so hide panels explicitly. */
+.chat-bar.collapsed .chat-panel {
+  visibility: hidden;
+}
+
 .chat-tabs {
   display: flex;
   align-items: center;
