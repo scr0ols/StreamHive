@@ -208,11 +208,30 @@
   padding: 12px;
 }
 
+/* Column count is driven by channel count, not just available width: an
+   auto-fit grid packs 4 and 5 channels into a single wide row on a normal
+   monitor, which reads badly. Explicit per-count templates keep it a
+   proper 2D grid instead. */
 .video-grid-symmetric {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   grid-auto-rows: 1fr;
   gap: 12px;
+}
+
+.video-grid-symmetric.count-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.video-grid-symmetric.count-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.video-grid-symmetric.count-4 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.video-grid-symmetric.count-5 {
+  grid-template-columns: repeat(3, 1fr);
 }
 
 .video-grid-focus {
@@ -713,5 +732,10 @@
 
   .add-channel-form input {
     width: 170px;
+  }
+
+  .video-grid-symmetric.count-3,
+  .video-grid-symmetric.count-5 {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

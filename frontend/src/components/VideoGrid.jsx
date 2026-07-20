@@ -24,7 +24,9 @@ export default function VideoGrid({
   }
 
   return (
-    <div className={`video-grid ${focusMode ? 'video-grid-focus' : 'video-grid-symmetric'}`}>
+    <div
+      className={`video-grid ${focusMode ? 'video-grid-focus' : `video-grid-symmetric count-${channels.length}`}`}
+    >
       {channels.map((channel) => (
         <VideoPanel
           key={channel.id}
