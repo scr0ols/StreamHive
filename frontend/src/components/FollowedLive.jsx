@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { MAX_CHANNELS } from '../gridReducer'
 import { IconChevronDown, IconPlus } from './icons'
-
-const BACKEND_URL = 'http://localhost:3000'
+import { BACKEND_URL } from '../config'
 
 function formatViewers(n) {
   return n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n)

@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { MIN_CHANNELS } from '../gridReducer'
 import { IconBookmark, IconChevronDown, IconTrash, IconTwitch } from './icons'
-
-const BACKEND_URL = 'http://localhost:3000'
+import { BACKEND_URL } from '../config'
 
 // GridState -> template payload: channels/volumes/activeChannel are keyed by
 // loginName in a template (session ids are meaningless across sessions).

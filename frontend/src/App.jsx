@@ -10,9 +10,8 @@ import AccountMenu from './components/AccountMenu'
 import SettingsModal from './components/SettingsModal'
 import { IconChevronDown, IconTwitch, LogoMark } from './components/icons'
 import { getDefaultAudioMode, getDefaultChatBarOpen } from './settings'
+import { BACKEND_URL } from './config'
 import './App.css'
-
-const BACKEND_URL = 'http://localhost:3000'
 
 function initGridState() {
   return {
