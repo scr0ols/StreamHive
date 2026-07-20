@@ -12,6 +12,10 @@
   --danger: #d93636;
   --live: #eb0400;
   --shadow: 0 8px 24px rgba(14, 12, 20, 0.12);
+  /* Brand mark's "shadow" facet color (see icons.jsx LogoMark). Independent
+     of the app accent palette above — this is the honeycomb mark's own
+     fixed identity color, just tuned per theme for legibility. */
+  --mark-shadow: #2c2318;
 
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
 
@@ -35,6 +39,12 @@
     --danger: #ff5c5c;
     --live: #eb0400;
     --shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    /* Lightened from #2c2318: that near-black tone reads fine on the light
+       theme but is nearly invisible against this near-black bg, which
+       flattened the mark's honeycomb facets into a single blob. This warm
+       tan keeps the facet distinct from both the bg and the gold/rust
+       facets. */
+    --mark-shadow: #a99a82;
   }
 }
 
@@ -54,6 +64,7 @@
   --danger: #d93636;
   --live: #eb0400;
   --shadow: 0 8px 24px rgba(14, 12, 20, 0.12);
+  --mark-shadow: #2c2318;
 }
 
 :root[data-theme='dark'] {
@@ -69,6 +80,7 @@
   --danger: #ff5c5c;
   --live: #eb0400;
   --shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --mark-shadow: #a99a82;
 }
 
 * {
@@ -121,6 +133,10 @@ body {
 
 *::-webkit-scrollbar-corner {
   background: transparent;
+}
+
+.logo-mark {
+  flex-shrink: 0;
 }
 
 button {

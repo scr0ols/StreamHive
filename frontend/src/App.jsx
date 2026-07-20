@@ -174,7 +174,7 @@ function App() {
         <main className="stage">
           {state.channels.length < MIN_CHANNELS ? (
             <div className="empty-state">
-              <LogoMark size={40} className="empty-state-mark" />
+              <LogoMark size={40} variant="primary" className="empty-state-mark" />
               <p className="empty-state-title">One screen. Every stream that matters.</p>
               <p>Add at least {MIN_CHANNELS} channels to start viewing.</p>
             </div>
