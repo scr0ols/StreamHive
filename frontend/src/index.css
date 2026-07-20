@@ -12,6 +12,10 @@
   --danger: #d93636;
   --live: #eb0400;
   --shadow: 0 8px 24px rgba(14, 12, 20, 0.12);
+  /* Brand mark's "shadow" facet color (see icons.jsx LogoMark). Independent
+     of the app accent palette above — this is the honeycomb mark's own
+     fixed identity color, just tuned per theme for legibility. */
+  --mark-shadow: #2c2318;
 
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
 
@@ -35,6 +39,12 @@
     --danger: #ff5c5c;
     --live: #eb0400;
     --shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    /* Lightened from #2c2318: that near-black tone reads fine on the light
+       theme but is nearly invisible against this near-black bg, which
+       flattened the mark's honeycomb facets into a single blob. This warm
+       tan keeps the facet distinct from both the bg and the gold/rust
+       facets. */
+    --mark-shadow: #a99a82;
   }
 }
 
@@ -54,6 +64,7 @@
   --danger: #d93636;
   --live: #eb0400;
   --shadow: 0 8px 24px rgba(14, 12, 20, 0.12);
+  --mark-shadow: #2c2318;
 }
 
 :root[data-theme='dark'] {
@@ -69,6 +80,7 @@
   --danger: #ff5c5c;
   --live: #eb0400;
   --shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --mark-shadow: #a99a82;
 }
 
 * {
@@ -84,6 +96,47 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+/* Themed scrollbars: thin, no native arrow buttons, blends with the app
+   instead of the OS-default bar (which is wide and shows arrow buttons on
+   Windows/Chrome). Firefox only supports the 'thin' keyword, not a custom
+   px width, so the webkit rules below carry the actual sizing. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 8px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text);
+}
+
+*::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.logo-mark {
+  flex-shrink: 0;
 }
 
 button {
@@ -149,6 +202,15 @@ input {
   background: var(--bg-inset);
   color: var(--text-h);
   filter: none;
+}
+
+.btn-ghost:disabled {
+  opacity: 0.5;
+  filter: none;
+}
+
+.btn-ghost:disabled:hover {
+  background: transparent;
 }
 
 /* Same transparent/bordered shape as .btn-ghost, but the accent color on

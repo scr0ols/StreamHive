@@ -161,9 +161,9 @@
   outline: none;
 }
 
-.add-channel-cap {
-  font-size: 13px;
-  color: var(--danger);
+.add-channel-form input:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .segmented {
@@ -259,15 +259,50 @@
   grid-template-columns: repeat(2, 1fr);
 }
 
+/* 2 over 1: first two channels share the top row, the third spans the
+   full width below, wider tiles for 16:9 sources than an even 3-up row. */
 .video-grid-symmetric.count-3 {
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+}
+
+.video-grid-symmetric.count-3 .video-panel:nth-child(3) {
+  grid-column: 1 / -1;
 }
 
 .video-grid-symmetric.count-4 {
   grid-template-columns: repeat(2, 1fr);
 }
 
+/* 2 over 3 pyramid on a 6-column base (lcm of 2 and 3), so both rows are
+   fully packed, no leftover empty cell like a plain 3-column/2-row grid
+   would leave. */
 .video-grid-symmetric.count-5 {
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+}
+
+.video-grid-symmetric.count-5 .video-panel:nth-child(1) {
+  grid-column: 1 / span 3;
+}
+
+.video-grid-symmetric.count-5 .video-panel:nth-child(2) {
+  grid-column: 4 / span 3;
+}
+
+.video-grid-symmetric.count-5 .video-panel:nth-child(3) {
+  grid-column: 1 / span 2;
+}
+
+.video-grid-symmetric.count-5 .video-panel:nth-child(4) {
+  grid-column: 3 / span 2;
+}
+
+.video-grid-symmetric.count-5 .video-panel:nth-child(5) {
+  grid-column: 5 / span 2;
+}
+
+.video-grid-symmetric.count-6 {
   grid-template-columns: repeat(3, 1fr);
 }
 
@@ -468,6 +503,11 @@
   padding: 8px 8px 8px 46px;
   overflow-x: auto;
   border-bottom: 1px solid var(--border);
+  scrollbar-width: thin;
+}
+
+.chat-tabs::-webkit-scrollbar {
+  height: 5px;
 }
 
 .chat-tab {
@@ -810,7 +850,19 @@
   }
 
   .video-grid-symmetric.count-3,
-  .video-grid-symmetric.count-5 {
+  .video-grid-symmetric.count-5,
+  .video-grid-symmetric.count-6 {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Drop back to plain auto-placement in the 2-column grid above instead
+     of the wide-screen pyramid spans, which assume 6 explicit columns. */
+  .video-grid-symmetric.count-3 .video-panel:nth-child(3),
+  .video-grid-symmetric.count-5 .video-panel:nth-child(1),
+  .video-grid-symmetric.count-5 .video-panel:nth-child(2),
+  .video-grid-symmetric.count-5 .video-panel:nth-child(3),
+  .video-grid-symmetric.count-5 .video-panel:nth-child(4),
+  .video-grid-symmetric.count-5 .video-panel:nth-child(5) {
+    grid-column: auto;
   }
 }

@@ -59,6 +59,12 @@ tier).
 1. `npm install`
 2. `npm run dev`, then open `http://localhost:5173`
 
+No `.env` needed for local dev — it defaults to `http://localhost:3000`. For
+a deployed build, set `VITE_BACKEND_URL` to the deployed backend's URL
+(Vite only exposes `VITE_`-prefixed vars to client code, and only bakes them
+in at build time, so this has to be set wherever the frontend is built, not
+just at runtime).
+
 Sessions are in-memory on the backend for now (they just map a session
 cookie to a `users.id`), so everyone has to re-login on every backend
 restart. Users and templates themselves are persisted in Postgres.

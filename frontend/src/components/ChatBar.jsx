@@ -1,10 +1,16 @@
+import { useEffect, useState } from 'react'
 import { IconChat, IconChevronRight, IconVolumeOn } from './icons'
+import { getTheme, THEME_CHANGE_EVENT } from '../settings'
 
-// Match the Twitch chat iframe theme to the app theme once at load; the
-// param only takes effect at iframe creation anyway.
-const dark = window.matchMedia('(prefers-color-scheme: dark)').matches
+// Match the Twitch chat iframe theme to the app's resolved theme (stored
+// override first, prefers-color-scheme only as the 'system' fallback —
+// same resolution settings.js/index.css use).
+function resolveDark() {
+  const theme = getTheme()
+  return theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+}
 
-function chatSrc(loginName) {
+function chatSrc(loginName, dark) {
   const params = new URLSearchParams({ parent: window.location.hostname })
   if (dark) params.set('darkpopout', '')
   return `https://www.twitch.tv/embed/${loginName}/chat?${params}`
@@ -14,6 +20,10 @@ function chatSrc(loginName) {
 // collapsing the bar) only toggles CSS classes. Never turn these into a
 // conditional {condition && <iframe/>} render — unmounting reloads the chat
 // on every switch. Verified against multitwitch.tv, see c-docs/NOTES.md.
+//
+// Theme is the one deliberate exception: `dark` is real state, so a theme
+// change (rare, explicit) does update `src` and reload the already-mounted
+// chats — unlike tab/audio switching, which stays reload-free.
 export default function ChatBar({
   channels,
   activeChatChannelId,
@@ -22,6 +32,16 @@ export default function ChatBar({
   onSelectChat,
   onToggle,
 }) {
+  const [dark, setDark] = useState(resolveDark)
+
+  useEffect(() => {
+    function handleThemeChange() {
+      setDark(resolveDark())
+    }
+    window.addEventListener(THEME_CHANGE_EVENT, handleThemeChange)
+    return () => window.removeEventListener(THEME_CHANGE_EVENT, handleThemeChange)
+  }, [])
+
   return (
     <aside className={`chat-bar${open ? '' : ' collapsed'}`}>
       <button
@@ -60,7 +80,7 @@ export default function ChatBar({
               className={`chat-panel${channel.id === activeChatChannelId ? ' visible' : ''}`}
             >
               <iframe
-                src={chatSrc(channel.loginName)}
+                src={chatSrc(channel.loginName, dark)}
                 title={`${channel.loginName} chat`}
               />
             </div>

@@ -1,4 +1,4 @@
-export const MAX_CHANNELS = 5
+export const MAX_CHANNELS = 6
 export const MIN_CHANNELS = 2
 
 export const initialGridState = {

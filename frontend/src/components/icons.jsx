@@ -156,15 +156,47 @@ export function IconTwitch({ size = 16, ...rest }) {
   )
 }
 
-export function LogoMark({ size = 22, ...rest }) {
+// Brand marks (Honeycomb). Fixed brand colors throughout, except the two
+// "shadow" facets on the primary mark, which use --mark-shadow: the
+// original near-black tone reads fine on the light theme but nearly
+// disappears against the dark theme's near-black surfaces, so that one
+// facet color swaps per theme (see index.css) while gold/rust stay put.
+// The reduced mark has no shadow facet, so it needs no theme handling.
+const MARK_VARIANTS = {
+  reduced: {
+    viewBox: '-12 -14.5 27 27',
+    paths: [
+      ['M 14 -5 L 9.5 2.79 L 0.5 2.79 L -4 -5 L 0.5 -12.79 L 9.5 -12.79 Z', '#D6841F'],
+      ['M 7 3 L 2.5 10.79 L -6.5 10.79 L -11 3 L -6.5 -4.79 L 2.5 -4.79 Z', '#F5A623'],
+    ],
+  },
+  primary: {
+    viewBox: '-18 -18 36 36',
+    paths: [
+      ['M -0.04 -9 L -2.62 -4.53 L -7.78 -4.53 L -10.36 -9 L -7.78 -13.47 L -2.62 -13.47 Z', 'var(--mark-shadow)'],
+      ['M -5.23 0 L -7.81 4.47 L -12.97 4.47 L -15.55 0 L -12.97 -4.47 L -7.81 -4.47 Z', 'var(--mark-shadow)'],
+      ['M 10.36 9 L 7.78 13.47 L 2.62 13.47 L 0.04 9 L 2.62 4.53 L 7.78 4.53 Z', '#D6841F'],
+      ['M 15.55 0 L 12.97 4.47 L 7.81 4.47 L 5.23 0 L 7.81 -4.47 L 12.97 -4.47 Z', '#D6841F'],
+      ['M 5.16 0 L 2.58 4.47 L -2.58 4.47 L -5.16 0 L -2.58 -4.47 L 2.58 -4.47 Z', '#F5A623'],
+    ],
+  },
+}
+
+export function LogoMark({ size = 22, variant = 'reduced', className = '', ...rest }) {
+  const { viewBox, paths } = MARK_VARIANTS[variant]
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true" {...rest}>
-      <rect x="2.5" y="2.5" width="12" height="12" rx="2.5" fill="var(--accent)" />
-      <rect x="17" y="2.5" width="4.5" height="4.5" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
-      <rect x="17" y="10" width="4.5" height="4.5" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
-      <rect x="2.5" y="17" width="4.5" height="4.5" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
-      <rect x="10" y="17" width="4.5" height="4.5" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
-      <rect x="17" y="17" width="4.5" height="4.5" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
+    <svg
+      className={`logo-mark${className ? ` ${className}` : ''}`}
+      width={size}
+      height={size}
+      viewBox={viewBox}
+      role="img"
+      aria-label="StreamHive"
+      {...rest}
+    >
+      {paths.map(([d, fill]) => (
+        <path key={d} d={d} fill={fill} />
+      ))}
     </svg>
   )
 }
