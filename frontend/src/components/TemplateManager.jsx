@@ -114,7 +114,7 @@ export default function TemplateManager({ user, gridState, onLoadTemplate, onLog
       {open && (
         <>
           <div className="dropdown-backdrop" onClick={() => setOpen(false)} />
-          <div className="dropdown-panel">
+          <div className="dropdown-panel dropdown-panel-left">
             {!user ? (
               <div className="dropdown-empty">
                 <p>Log in to save and load grid templates.</p>

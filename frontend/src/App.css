@@ -55,6 +55,12 @@
   color: var(--text-h);
 }
 
+.auth-account {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .add-channel-form {
   display: flex;
   gap: 8px;
@@ -472,6 +478,14 @@
 
 .online-now-panel {
   width: 340px;
+}
+
+/* Templates now sits near the left edge of the top bar; anchor its panel
+   to the trigger's left edge instead of the default right:0, or it would
+   overflow off-screen to the left. */
+.dropdown-panel-left {
+  right: auto;
+  left: 0;
 }
 
 .online-section + .online-section {

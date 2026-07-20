@@ -107,10 +107,6 @@ function App() {
           <span className="brand-name">StreamHive</span>
         </div>
         <div className="topbar-controls">
-          <AddChannelForm
-            channelCount={state.channels.length}
-            onAdd={(loginName) => dispatch({ type: 'ADD_CHANNEL', loginName })}
-          />
           <TemplateManager
             user={user}
             gridState={state}
@@ -118,9 +114,9 @@ function App() {
             onLogin={login}
             onSessionExpired={() => setUser(null)}
           />
-          <AudioModeControl
-            audioMode={state.audioMode}
-            onSetAudioMode={(mode) => dispatch({ type: 'SET_AUDIO_MODE', mode })}
+          <AddChannelForm
+            channelCount={state.channels.length}
+            onAdd={(loginName) => dispatch({ type: 'ADD_CHANNEL', loginName })}
           />
         </div>
         {checked && (
@@ -132,14 +128,20 @@ function App() {
                 onSessionExpired={() => setUser(null)}
               />
             )}
-            {user ? (
-              <>
+            {user && (
+              <span className="auth-account">
                 <img className="auth-avatar" src={user.avatarUrl} alt="" width={28} height={28} />
                 <span className="auth-name">{user.displayName}</span>
-                <button type="button" className="btn btn-ghost" onClick={logout}>
-                  Log out
-                </button>
-              </>
+              </span>
+            )}
+            <AudioModeControl
+              audioMode={state.audioMode}
+              onSetAudioMode={(mode) => dispatch({ type: 'SET_AUDIO_MODE', mode })}
+            />
+            {user ? (
+              <button type="button" className="btn btn-ghost" onClick={logout}>
+                Log out
+              </button>
             ) : (
               <button type="button" className="btn btn-twitch" onClick={login}>
                 <IconTwitch />
