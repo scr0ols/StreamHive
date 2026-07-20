@@ -98,10 +98,7 @@ function StreamRow({ stream, inGrid, atCap, onAdd }) {
   return (
     <div className="followed-row">
       <div className="followed-row-info">
-        <span className="followed-row-name">
-          <span className="live-dot" />
-          {stream.displayName}
-        </span>
+        <span className="followed-row-name">{stream.displayName}</span>
         <span className="followed-row-meta" title={stream.title}>
           {stream.gameName || 'Streaming'} · {formatViewers(stream.viewerCount)} viewers
         </span>
@@ -111,7 +108,7 @@ function StreamRow({ stream, inGrid, atCap, onAdd }) {
         className="btn btn-ghost btn-small"
         disabled={added || atCap}
         onClick={() => onAdd(stream.loginName)}
-        title={added ? 'Already in the grid' : atCap ? '5-channel max reached' : `Add ${stream.displayName} to the grid`}
+        title={added ? 'Already in the grid' : atCap ? `Max ${MAX_CHANNELS} channels reached` : `Add ${stream.displayName} to the grid`}
       >
         <IconPlus size={13} />
         <span>{added ? 'Added' : 'Add'}</span>
