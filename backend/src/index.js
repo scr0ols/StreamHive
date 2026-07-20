@@ -20,18 +20,40 @@ app.use(cors({ origin: FRONTEND_URL, credentials: true }));
 app.use(cookieParser());
 app.use(express.json());
 
-// Sessions and OAuth states live in memory (auth-guard polish comes later
-// per c-docs/PLAN.md section 6, Day 3 note), they only map a session_id
-// cookie to a users.id. Users and templates themselves are Postgres-backed.
-const sessions = new Map();
+// OAuth states are short-lived (round-trip of a single login attempt), stay
+// in memory. Sessions map a session_id cookie to a users.id and must
+// survive a backend restart, so they're Postgres-backed (see `sessions`
+// table) with expires_at mirroring the cookie's maxAge below.
 const pendingStates = new Set();
+const SESSION_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7;
 
-function requireAuth(req, res, next) {
-  const userId = sessions.get(req.cookies.session_id);
-  if (!userId) {
+// Local dev has frontend and backend on the same site (both localhost, http),
+// so the default lax/insecure cookie is sent fine. In production they're on
+// different domains (Vercel + Render), which is a cross-site request from
+// the browser's perspective — that requires SameSite=None, and browsers
+// only honor SameSite=None on a Secure (https-only) cookie. NODE_ENV=production
+// must be set in the deployed backend's environment for this to switch over.
+const isProduction = process.env.NODE_ENV === 'production';
+const sessionCookieOptions = {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction ? 'none' : 'lax',
+};
+
+async function requireAuth(req, res, next) {
+  const sessionId = req.cookies.session_id;
+  if (!sessionId) {
     return res.status(401).json({ error: 'Not logged in.' });
   }
-  req.userId = userId;
+
+  const { rows } = await pool.query('SELECT user_id, expires_at FROM sessions WHERE id = $1', [sessionId]);
+  const session = rows[0];
+  if (!session || new Date(session.expires_at) < new Date()) {
+    if (session) await pool.query('DELETE FROM sessions WHERE id = $1', [sessionId]);
+    return res.status(401).json({ error: 'Not logged in.' });
+  }
+
+  req.userId = session.user_id;
   next();
 }
 
@@ -132,13 +154,12 @@ app.get('/auth/twitch/callback', async (req, res) => {
   const userId = rows[0].id;
 
   const sessionId = crypto.randomBytes(32).toString('hex');
-  sessions.set(sessionId, userId);
+  await pool.query(
+    'INSERT INTO sessions (id, user_id, expires_at, created_at) VALUES ($1, $2, $3, $4)',
+    [sessionId, userId, new Date(Date.now() + SESSION_MAX_AGE_MS).toISOString(), new Date().toISOString()],
+  );
 
-  res.cookie('session_id', sessionId, {
-    httpOnly: true,
-    sameSite: 'lax',
-    maxAge: 1000 * 60 * 60 * 24 * 7,
-  });
+  res.cookie('session_id', sessionId, { ...sessionCookieOptions, maxAge: SESSION_MAX_AGE_MS });
   res.redirect(FRONTEND_URL);
 });
 
@@ -155,9 +176,9 @@ app.get('/auth/me', requireAuth, async (req, res) => {
   });
 });
 
-app.post('/auth/logout', (req, res) => {
-  sessions.delete(req.cookies.session_id);
-  res.clearCookie('session_id');
+app.post('/auth/logout', async (req, res) => {
+  await pool.query('DELETE FROM sessions WHERE id = $1', [req.cookies.session_id]);
+  res.clearCookie('session_id', sessionCookieOptions);
   res.status(204).end();
 });
 
@@ -262,9 +283,9 @@ app.get('/api/resolve-channels', async (req, res) => {
 // user's own token (requires the user:read:follows scope). Passed through,
 // never persisted.
 app.get('/api/followed-streams', requireAuth, async (req, res) => {
-  function forceRelogin() {
-    sessions.delete(req.cookies.session_id);
-    res.clearCookie('session_id');
+  async function forceRelogin() {
+    await pool.query('DELETE FROM sessions WHERE id = $1', [req.cookies.session_id]);
+    res.clearCookie('session_id', sessionCookieOptions);
     res.status(401).json({ error: 'Session expired, log in again.' });
   }
 
