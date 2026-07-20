@@ -815,6 +815,13 @@
   color: var(--text);
 }
 
+.settings-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;

@@ -9,9 +9,12 @@ import {
 } from '../settings'
 import { IconExternalLink, IconHeart } from './icons'
 
-// Only donation option for now (per João, 2026-07-21); revisit as a list if
-// more platforms get added later.
-const KOFI_URL = 'https://ko-fi.com/scr0ols'
+// Donation platforms (per João, 2026-07-21/22). Add more entries here as
+// needed rather than growing separate one-off links.
+const DONATION_LINKS = [
+  { name: 'Ko-fi', url: 'https://ko-fi.com/scr0ols' },
+  { name: 'PayPal', url: 'https://paypal.me/scr0ols' },
+]
 
 // Default audio mode / chat-bar-open only take effect on the next session
 // (they seed the reducer's initial state); theme applies immediately since
@@ -100,11 +103,15 @@ export default function SettingsModal({ onClose }) {
             <span className="settings-label">Support StreamHive</span>
             <span className="settings-hint">Optional, keeps development going</span>
           </div>
-          <a className="btn btn-ghost" href={KOFI_URL} target="_blank" rel="noreferrer">
-            <IconHeart size={14} />
-            Ko-fi
-            <IconExternalLink size={13} />
-          </a>
+          <div className="settings-links">
+            {DONATION_LINKS.map(({ name, url }) => (
+              <a key={name} className="btn btn-ghost" href={url} target="_blank" rel="noreferrer">
+                <IconHeart size={14} />
+                {name}
+                <IconExternalLink size={13} />
+              </a>
+            ))}
+          </div>
         </div>
 
         <div className="modal-actions">
