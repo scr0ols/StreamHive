@@ -23,7 +23,7 @@ export default function AddChannelForm({ channelCount, onAdd }) {
         disabled={atCap}
         aria-label="Twitch channel name"
       />
-      <button type="submit" className="btn btn-primary" disabled={atCap}>
+      <button type="submit" className="btn btn-quiet" disabled={atCap}>
         <IconPlus />
         <span>Add</span>
       </button>

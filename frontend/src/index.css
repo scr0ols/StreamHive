@@ -150,3 +150,22 @@ input {
   color: var(--text-h);
   filter: none;
 }
+
+/* Same transparent/bordered shape as .btn-ghost, but the accent color on
+   text/icon marks it as the form's action without a heavy solid fill. */
+.btn-quiet {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--accent);
+}
+
+.btn-quiet:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  filter: none;
+}
+
+.btn-quiet:disabled {
+  opacity: 0.5;
+  filter: none;
+}
