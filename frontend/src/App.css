@@ -468,6 +468,11 @@
   padding: 8px 8px 8px 46px;
   overflow-x: auto;
   border-bottom: 1px solid var(--border);
+  scrollbar-width: thin;
+}
+
+.chat-tabs::-webkit-scrollbar {
+  height: 5px;
 }
 
 .chat-tab {
