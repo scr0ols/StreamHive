@@ -18,8 +18,13 @@
 }
 
 .app-topbar.collapsed {
-  padding-top: 6px;
-  padding-bottom: 6px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  gap: 8px;
+}
+
+.app-topbar.collapsed .brand-name {
+  display: none;
 }
 
 /* No iframes live in the top bar (unlike the chat bar), so collapsing can
@@ -75,8 +80,6 @@
 
 .auth-avatar {
   border-radius: 50%;
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
 }
 
 .auth-name {

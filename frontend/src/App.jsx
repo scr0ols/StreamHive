@@ -176,7 +176,7 @@ function App() {
           {state.channels.length < MIN_CHANNELS ? (
             <div className="empty-state">
               <LogoMark size={40} className="empty-state-mark" />
-              <p className="empty-state-title">Watch up to 5 streams at once</p>
+              <p className="empty-state-title">One screen. Every stream that matters.</p>
               <p>Add at least {MIN_CHANNELS} channels to start viewing.</p>
             </div>
           ) : (
