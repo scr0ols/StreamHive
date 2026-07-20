@@ -6,6 +6,7 @@ import 'dotenv/config';
 import { pool } from './db.js';
 import { getAppAccessToken } from './twitchAppToken.js';
 import { getUserAccessToken, ReloginRequiredError } from './twitchUserToken.js';
+import { assertEncryptionKeyConfigured, encryptToken } from './tokenCrypto.js';
 
 const {
   PORT = 3000,
@@ -14,6 +15,13 @@ const {
   TWITCH_CLIENT_SECRET,
   TWITCH_REDIRECT_URI,
 } = process.env;
+
+if (!FRONTEND_URL) {
+  throw new Error('FRONTEND_URL is not set — refusing to start with cors() defaulting to origin "*"');
+}
+// Fails fast (see TOKEN_ENCRYPTION_KEY in tokenCrypto.js) rather than only
+// surfacing on the first login attempt.
+assertEncryptionKeyConfigured();
 
 const app = express();
 app.use(cors({ origin: FRONTEND_URL, credentials: true }));
@@ -145,8 +153,8 @@ app.get('/auth/twitch/callback', async (req, res) => {
       twitchUser.login,
       twitchUser.display_name,
       twitchUser.profile_image_url,
-      tokens.access_token,
-      tokens.refresh_token,
+      encryptToken(tokens.access_token),
+      encryptToken(tokens.refresh_token),
       expiresAt,
       now,
     ],
@@ -332,6 +340,23 @@ app.get('/api/followed-streams', requireAuth, async (req, res) => {
   });
 });
 
+// Mirrors frontend/src/gridReducer.js's MIN_CHANNELS/MAX_CHANNELS and
+// audioMode values — kept in sync manually since frontend and backend are
+// separate apps with no shared package.
+const MIN_CHANNELS = 2;
+const MAX_CHANNELS = 6;
+const AUDIO_MODES = ['selection', 'both'];
+
+function templateValidationError(body) {
+  const { name, channels, audioMode } = body;
+  if (typeof name !== 'string' || !name.trim()) return 'name is required.';
+  if (!Array.isArray(channels) || channels.length < MIN_CHANNELS || channels.length > MAX_CHANNELS) {
+    return `channels must be an array of ${MIN_CHANNELS}-${MAX_CHANNELS} entries.`;
+  }
+  if (!AUDIO_MODES.includes(audioMode)) return `audioMode must be one of: ${AUDIO_MODES.join(', ')}.`;
+  return null;
+}
+
 app.get('/api/templates', requireAuth, async (req, res) => {
   const { rows } = await pool.query(
     'SELECT * FROM templates WHERE user_id = $1 ORDER BY updated_at DESC',
@@ -341,6 +366,9 @@ app.get('/api/templates', requireAuth, async (req, res) => {
 });
 
 app.post('/api/templates', requireAuth, async (req, res) => {
+  const validationError = templateValidationError(req.body);
+  if (validationError) return res.status(400).json({ error: validationError });
+
   const { name, channels, audioMode, activeChannel, volumes, chatBarOpen } = req.body;
   const now = new Date().toISOString();
   const { rows } = await pool.query(
@@ -372,6 +400,9 @@ app.get('/api/templates/:id', requireAuth, async (req, res) => {
 });
 
 app.put('/api/templates/:id', requireAuth, async (req, res) => {
+  const validationError = templateValidationError(req.body);
+  if (validationError) return res.status(400).json({ error: validationError });
+
   const { name, channels, audioMode, activeChannel, volumes, chatBarOpen } = req.body;
   const now = new Date().toISOString();
   const { rows } = await pool.query(

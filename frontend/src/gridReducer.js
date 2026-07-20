@@ -18,7 +18,8 @@ export function gridReducer(state, action) {
     // longer resolves on Twitch (renamed/banned); it stays listed so the user
     // can remove it, but is skipped when picking the active audio channel.
     case 'SET_STATE': {
-      const channels = action.channels.map((c) => ({
+      if (action.channels.length < MIN_CHANNELS) return state
+      const channels = action.channels.slice(0, MAX_CHANNELS).map((c) => ({
         id: crypto.randomUUID(),
         loginName: c.loginName,
         addedAt: Date.now(),

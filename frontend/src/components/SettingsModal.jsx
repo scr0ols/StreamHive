@@ -7,6 +7,14 @@ import {
   getTheme,
   setTheme,
 } from '../settings'
+import { IconExternalLink, IconHeart } from './icons'
+
+// Donation platforms (per João, 2026-07-21/22). Add more entries here as
+// needed rather than growing separate one-off links.
+const DONATION_LINKS = [
+  { name: 'Ko-fi', url: 'https://ko-fi.com/scr0ols' },
+  { name: 'PayPal', url: 'https://paypal.me/scr0ols' },
+]
 
 // Default audio mode / chat-bar-open only take effect on the next session
 // (they seed the reducer's initial state); theme applies immediately since
@@ -87,6 +95,22 @@ export default function SettingsModal({ onClose }) {
             <button type="button" className={theme === 'dark' ? 'active' : ''} onClick={() => handleTheme('dark')}>
               Dark
             </button>
+          </div>
+        </div>
+
+        <div className="settings-row">
+          <div>
+            <span className="settings-label">Support StreamHive</span>
+            <span className="settings-hint">Optional, keeps development going</span>
+          </div>
+          <div className="settings-links">
+            {DONATION_LINKS.map(({ name, url }) => (
+              <a key={name} className="btn btn-ghost" href={url} target="_blank" rel="noreferrer">
+                <IconHeart size={14} />
+                {name}
+                <IconExternalLink size={13} />
+              </a>
+            ))}
           </div>
         </div>
 

@@ -21,6 +21,11 @@ export default function VideoPanel({
 }) {
   const containerRef = useRef(null)
   const playerRef = useRef(null)
+  const propsRef = useRef({ muted, volume })
+
+  useEffect(() => {
+    propsRef.current = { muted, volume }
+  }, [muted, volume])
 
   useEffect(() => {
     if (channel.exists === false) return undefined
@@ -44,6 +49,8 @@ export default function VideoPanel({
         if (cancelled) return
         const player = embed.getPlayer()
         playerRef.current = player
+        player.setMuted(propsRef.current.muted)
+        player.setVolume(propsRef.current.volume / 100)
         player.addEventListener(window.Twitch.Player.ONLINE, () => {
           if (cancelled) return
           onOnlineChange(channel.id, true)
