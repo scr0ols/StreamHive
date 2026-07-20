@@ -336,6 +336,23 @@ app.get('/api/followed-streams', requireAuth, async (req, res) => {
   });
 });
 
+// Mirrors frontend/src/gridReducer.js's MIN_CHANNELS/MAX_CHANNELS and
+// audioMode values — kept in sync manually since frontend and backend are
+// separate apps with no shared package.
+const MIN_CHANNELS = 2;
+const MAX_CHANNELS = 6;
+const AUDIO_MODES = ['selection', 'both'];
+
+function templateValidationError(body) {
+  const { name, channels, audioMode } = body;
+  if (typeof name !== 'string' || !name.trim()) return 'name is required.';
+  if (!Array.isArray(channels) || channels.length < MIN_CHANNELS || channels.length > MAX_CHANNELS) {
+    return `channels must be an array of ${MIN_CHANNELS}-${MAX_CHANNELS} entries.`;
+  }
+  if (!AUDIO_MODES.includes(audioMode)) return `audioMode must be one of: ${AUDIO_MODES.join(', ')}.`;
+  return null;
+}
+
 app.get('/api/templates', requireAuth, async (req, res) => {
   const { rows } = await pool.query(
     'SELECT * FROM templates WHERE user_id = $1 ORDER BY updated_at DESC',
@@ -345,6 +362,9 @@ app.get('/api/templates', requireAuth, async (req, res) => {
 });
 
 app.post('/api/templates', requireAuth, async (req, res) => {
+  const validationError = templateValidationError(req.body);
+  if (validationError) return res.status(400).json({ error: validationError });
+
   const { name, channels, audioMode, activeChannel, volumes, chatBarOpen } = req.body;
   const now = new Date().toISOString();
   const { rows } = await pool.query(
@@ -376,6 +396,9 @@ app.get('/api/templates/:id', requireAuth, async (req, res) => {
 });
 
 app.put('/api/templates/:id', requireAuth, async (req, res) => {
+  const validationError = templateValidationError(req.body);
+  if (validationError) return res.status(400).json({ error: validationError });
+
   const { name, channels, audioMode, activeChannel, volumes, chatBarOpen } = req.body;
   const now = new Date().toISOString();
   const { rows } = await pool.query(
