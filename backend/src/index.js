@@ -15,6 +15,10 @@ const {
   TWITCH_REDIRECT_URI,
 } = process.env;
 
+if (!FRONTEND_URL) {
+  throw new Error('FRONTEND_URL is not set — refusing to start with cors() defaulting to origin "*"');
+}
+
 const app = express();
 app.use(cors({ origin: FRONTEND_URL, credentials: true }));
 app.use(cookieParser());
