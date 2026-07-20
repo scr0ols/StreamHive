@@ -13,11 +13,55 @@ Full architecture, data model, and reasoning behind these choices are kept in lo
 
 ## Status
 
-Early planning complete, implementation starting.
+The core viewing experience works end to end against real Twitch channels:
+a 2–5 channel video grid with add/remove, both audio modes (Selection with
+focus-follows-audio layout, Both/All with per-panel volume), online/offline
+detection via a backend Helix poll, a chat bar with one always-mounted tab
+per channel (chat follows the active audio channel until manually
+overridden), and native per-panel actions (follow, donate, channel link).
+Twitch OAuth login is wired into the app shell and gates the follow action;
+anonymous read-only viewing works without login.
+
+Account features (Phase 2): saving/loading/deleting named grid templates
+from the top bar (login-gated, with channel validation on load — renamed or
+banned channels render a "channel not found" panel), and an "Online now"
+menu with two sections — channels the logged-in user follows that are live
+right now, and the current top live channels on Twitch by viewer count —
+each with one-click add-to-grid (following requires the `user:read:follows`
+OAuth scope; users who logged in before the scope change are re-prompted to
+log in). Twitch tokens are refreshed server-side on expiry; nothing from
+the Twitch API is ever persisted.
 
 ## Setup
 
-Not yet runnable end to end. This section will be filled in as the backend and frontend scaffolds land (Phase 0 of the implementation plan).
+Requires a Twitch app (Confidential client type) registered in the
+[Twitch Developer Console](https://dev.twitch.tv/console), with
+`http://localhost:3000/auth/twitch/callback` as a registered redirect URI,
+and a Postgres database (this project uses [Neon](https://neon.tech)'s free
+tier).
+
+**Backend** (`backend/`):
+
+1. Create a `.env` file (never committed) with:
+   ```
+   PORT=3000
+   FRONTEND_URL=http://localhost:5173
+   TWITCH_CLIENT_ID=<your client id>
+   TWITCH_CLIENT_SECRET=<your client secret>
+   TWITCH_REDIRECT_URI=http://localhost:3000/auth/twitch/callback
+   DATABASE_URL=<your Postgres connection string>
+   ```
+2. `npm install`
+3. `npm run dev`
+
+**Frontend** (`frontend/`):
+
+1. `npm install`
+2. `npm run dev`, then open `http://localhost:5173`
+
+Sessions are in-memory on the backend for now (they just map a session
+cookie to a `users.id`), so everyone has to re-login on every backend
+restart. Users and templates themselves are persisted in Postgres.
 
 ## Branch workflow
 

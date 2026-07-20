@@ -1,0 +1,171 @@
+:root {
+  /* Light theme */
+  --bg: #f6f6f9;
+  --bg-elev: #ffffff;
+  --bg-inset: #eceaf1;
+  --border: #e0dee6;
+  --text: #5f5b6b;
+  --text-h: #0e0c14;
+  --accent: #8b3dff;
+  --accent-strong: #772ce8;
+  --accent-soft: rgba(139, 61, 255, 0.12);
+  --danger: #d93636;
+  --live: #eb0400;
+  --shadow: 0 8px 24px rgba(14, 12, 20, 0.12);
+
+  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+
+  font: 16px/145% var(--sans);
+  color-scheme: light dark;
+  color: var(--text);
+  background: var(--bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0e0e13;
+    --bg-elev: #17171e;
+    --bg-inset: #21212b;
+    --border: #2a2a36;
+    --text: #a3a1ad;
+    --text-h: #f2f1f5;
+    --accent: #a970ff;
+    --accent-strong: #9147ff;
+    --accent-soft: rgba(169, 112, 255, 0.16);
+    --danger: #ff5c5c;
+    --live: #eb0400;
+    --shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  }
+}
+
+/* Manual theme override (Settings). These come after the media query above
+   so they win regardless of the OS preference once data-theme is set;
+   removing the attribute (System option) hands control back to the query. */
+:root[data-theme='light'] {
+  --bg: #f6f6f9;
+  --bg-elev: #ffffff;
+  --bg-inset: #eceaf1;
+  --border: #e0dee6;
+  --text: #5f5b6b;
+  --text-h: #0e0c14;
+  --accent: #8b3dff;
+  --accent-strong: #772ce8;
+  --accent-soft: rgba(139, 61, 255, 0.12);
+  --danger: #d93636;
+  --live: #eb0400;
+  --shadow: 0 8px 24px rgba(14, 12, 20, 0.12);
+}
+
+:root[data-theme='dark'] {
+  --bg: #0e0e13;
+  --bg-elev: #17171e;
+  --bg-inset: #21212b;
+  --border: #2a2a36;
+  --text: #a3a1ad;
+  --text-h: #f2f1f5;
+  --accent: #a970ff;
+  --accent-strong: #9147ff;
+  --accent-soft: rgba(169, 112, 255, 0.16);
+  --danger: #ff5c5c;
+  --live: #eb0400;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+#root {
+  height: 100svh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+input {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Shared button variants */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-h);
+  background: var(--bg-inset);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, filter 0.15s ease;
+}
+
+.btn:hover {
+  filter: brightness(1.08);
+}
+
+.btn-primary {
+  background: var(--accent-strong);
+  color: #fff;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  filter: none;
+}
+
+.btn-twitch {
+  background: #772ce8;
+  color: #fff;
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.btn-ghost:hover {
+  background: var(--bg-inset);
+  color: var(--text-h);
+  filter: none;
+}
+
+/* Same transparent/bordered shape as .btn-ghost, but the accent color on
+   text/icon marks it as the form's action without a heavy solid fill. */
+.btn-quiet {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--accent);
+}
+
+.btn-quiet:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  filter: none;
+}
+
+.btn-quiet:disabled {
+  opacity: 0.5;
+  filter: none;
+}
