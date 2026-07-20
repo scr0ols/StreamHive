@@ -1,6 +1,6 @@
 # StreamHive
 
-Watch 2 to 5 Twitch channels at once in a single grid, using the official Twitch Embed API for video and chat. No setup required on the streamers' side. Three audio modes (Selection, Both/All, and an exploratory SmartVoiceSwitch), plus layout templates saved to a lightweight account via Twitch OAuth login.
+Watch 2 to 6 Twitch channels at once in a single grid, using the official Twitch Embed API for video and chat. No setup required on the streamers' side. Three audio modes (Selection, Both/All, and an exploratory SmartVoiceSwitch), plus layout templates saved to a lightweight account via Twitch OAuth login.
 
 **Live app:** [stream-hive-ten.vercel.app](https://stream-hive-ten.vercel.app) — the backend runs on Render's free tier, so the first request after a period of inactivity can take up to a minute to wake up.
 
@@ -16,7 +16,7 @@ Full architecture, data model, and reasoning behind these choices are kept in lo
 ## Status
 
 The core viewing experience works end to end against real Twitch channels:
-a 2–5 channel video grid with add/remove, both audio modes (Selection with
+a 2–6 channel video grid with add/remove, both audio modes (Selection with
 focus-follows-audio layout, Both/All with per-panel volume), online/offline
 detection via a backend Helix poll, a chat bar with one always-mounted tab
 per channel (chat follows the active audio channel until manually
@@ -53,8 +53,11 @@ tier).
    TWITCH_REDIRECT_URI=http://localhost:3000/auth/twitch/callback
    DATABASE_URL=<your Postgres connection string>
    ```
-2. `npm install`
-3. `npm run dev`
+2. Run `schema.sql` against that database to create the `users`, `templates`, and `sessions` tables.
+3. `npm install`
+4. `npm run dev`
+
+For a deployed backend, also set `NODE_ENV=production`. Frontend and backend live on different domains once deployed, which makes the session cookie a cross-site request — that only works with `Secure`/`SameSite=None`, which the backend only sets when `NODE_ENV=production`.
 
 **Frontend** (`frontend/`):
 
@@ -67,9 +70,8 @@ a deployed build, set `VITE_BACKEND_URL` to the deployed backend's URL
 in at build time, so this has to be set wherever the frontend is built, not
 just at runtime).
 
-Sessions are in-memory on the backend for now (they just map a session
-cookie to a `users.id`), so everyone has to re-login on every backend
-restart. Users and templates themselves are persisted in Postgres.
+Sessions map a session cookie to a `users.id` and are persisted in Postgres
+(see `schema.sql`), so they survive a backend restart or redeploy.
 
 ## Branch workflow
 
