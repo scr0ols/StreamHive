@@ -1,9 +1,23 @@
 import { pool } from './db.js'
+import { encryptToken, decryptToken } from './tokenCrypto.js'
 
 // Thrown when the user's tokens can't produce a valid access token anymore
 // (refresh token revoked/invalid). Callers clear the session and force a
 // clean re-login, per PLAN.md edge case 7.
 export class ReloginRequiredError extends Error {}
+
+// A stored token that fails to decrypt is either corrupt or (during the
+// encryption rollout) a plaintext row written before this module started
+// encrypting on write. Either way there's no valid token to recover, so
+// treat it the same as an expired/revoked one: force a clean re-login,
+// which naturally re-encrypts on the next OAuth callback.
+function decryptStoredToken(stored) {
+  try {
+    return decryptToken(stored)
+  } catch {
+    throw new ReloginRequiredError('Stored token could not be decrypted.')
+  }
+}
 
 // Twitch rotates refresh tokens on use, so two concurrent refreshes for the
 // same user would race: the first consumes the stored refresh_token and
@@ -28,7 +42,7 @@ async function refreshAccessToken(userId, refreshToken) {
   const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString()
   await pool.query(
     'UPDATE users SET access_token = $1, refresh_token = $2, expires_at = $3 WHERE id = $4',
-    [tokens.access_token, tokens.refresh_token, expiresAt, userId],
+    [encryptToken(tokens.access_token), encryptToken(tokens.refresh_token), expiresAt, userId],
   )
   return tokens.access_token
 }
@@ -45,14 +59,14 @@ export async function getUserAccessToken(userId) {
   if (!user) throw new ReloginRequiredError('User not found.')
 
   if (new Date(user.expires_at).getTime() - Date.now() > 60_000) {
-    return user.access_token
+    return decryptStoredToken(user.access_token)
   }
 
   if (refreshesInFlight.has(userId)) {
     return refreshesInFlight.get(userId)
   }
 
-  const refreshPromise = refreshAccessToken(userId, user.refresh_token).finally(() => {
+  const refreshPromise = refreshAccessToken(userId, decryptStoredToken(user.refresh_token)).finally(() => {
     refreshesInFlight.delete(userId)
   })
   refreshesInFlight.set(userId, refreshPromise)
