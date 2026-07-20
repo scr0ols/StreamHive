@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { MAX_CHANNELS } from '../gridReducer'
-import { IconChevronDown, IconHeart, IconPlus } from './icons'
+import { IconChevronDown, IconPlus } from './icons'
 
 const BACKEND_URL = 'http://localhost:3000'
 
@@ -58,7 +58,7 @@ export default function FollowedLive({ channels, onAdd, onSessionExpired }) {
   return (
     <div className="dropdown">
       <button type="button" className="btn btn-ghost" onClick={toggleOpen} aria-expanded={open}>
-        <IconHeart />
+        <span className="live-dot" aria-hidden="true" />
         <span>Online now</span>
         <IconChevronDown size={13} />
       </button>
