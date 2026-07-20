@@ -1,14 +1,19 @@
 import { useState } from 'react'
-import { IconChevronDown } from './icons'
+import { IconChevronDown, IconExternalLink, IconLogout, IconSettings, IconTwitch } from './icons'
 
 // Rightmost item in the top bar, so the dropdown panel keeps the default
 // right:0 anchor (its right edge already sits near the viewport edge).
-export default function AccountMenu({ user, onLogout }) {
+export default function AccountMenu({ user, onLogout, onOpenSettings }) {
   const [open, setOpen] = useState(false)
 
   function handleLogout() {
     setOpen(false)
     onLogout()
+  }
+
+  function handleSettings() {
+    setOpen(false)
+    onOpenSettings()
   }
 
   return (
@@ -28,8 +33,25 @@ export default function AccountMenu({ user, onLogout }) {
         <>
           <div className="dropdown-backdrop" onClick={() => setOpen(false)} />
           <div className="dropdown-panel account-panel">
-            <button type="button" className="btn btn-ghost btn-block" onClick={handleLogout}>
-              Log out
+            <a
+              className="menu-item"
+              href={`https://www.twitch.tv/${user.login}`}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => setOpen(false)}
+            >
+              <IconTwitch />
+              <span>Twitch account</span>
+              <IconExternalLink size={13} className="menu-item-external" />
+            </a>
+            <button type="button" className="menu-item" onClick={handleSettings}>
+              <IconSettings />
+              <span>Settings</span>
+            </button>
+            <div className="menu-divider" />
+            <button type="button" className="menu-item menu-item-danger" onClick={handleLogout}>
+              <IconLogout />
+              <span>Log out</span>
             </button>
           </div>
         </>

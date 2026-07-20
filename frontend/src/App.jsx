@@ -7,17 +7,28 @@ import ChatBar from './components/ChatBar'
 import TemplateManager from './components/TemplateManager'
 import FollowedLive from './components/FollowedLive'
 import AccountMenu from './components/AccountMenu'
+import SettingsModal from './components/SettingsModal'
 import { IconChevronDown, IconTwitch, LogoMark } from './components/icons'
+import { getDefaultAudioMode, getDefaultChatBarOpen } from './settings'
 import './App.css'
 
 const BACKEND_URL = 'http://localhost:3000'
+
+function initGridState() {
+  return {
+    ...initialGridState,
+    audioMode: getDefaultAudioMode(),
+    chatBarOpen: getDefaultChatBarOpen(),
+  }
+}
 
 function App() {
   const [user, setUser] = useState(null)
   const [checked, setChecked] = useState(false)
   const [loginPrompt, setLoginPrompt] = useState(null)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [topbarOpen, setTopbarOpen] = useState(true)
-  const [state, dispatch] = useReducer(gridReducer, initialGridState)
+  const [state, dispatch] = useReducer(gridReducer, undefined, initGridState)
 
   // Dev-only hook: lets browser automation drive the reducer directly (e.g.
   // to exercise SET_STATE without an authenticated session). Stripped from
@@ -147,7 +158,7 @@ function App() {
                   onSetAudioMode={(mode) => dispatch({ type: 'SET_AUDIO_MODE', mode })}
                 />
                 {user ? (
-                  <AccountMenu user={user} onLogout={logout} />
+                  <AccountMenu user={user} onLogout={logout} onOpenSettings={() => setSettingsOpen(true)} />
                 ) : (
                   <button type="button" className="btn btn-twitch" onClick={login}>
                     <IconTwitch />
@@ -194,6 +205,8 @@ function App() {
           />
         )}
       </div>
+
+      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
 
       {loginPrompt && (
         <div className="modal-backdrop" onClick={() => setLoginPrompt(null)}>

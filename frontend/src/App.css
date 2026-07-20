@@ -90,13 +90,46 @@
 }
 
 .account-panel {
-  width: 160px;
+  width: 200px;
   padding: 6px;
 }
 
-.btn-block {
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   width: 100%;
-  justify-content: center;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  text-align: left;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.menu-item:hover {
+  background: var(--bg-inset);
+  color: var(--text-h);
+}
+
+.menu-item-external {
+  margin-left: auto;
+  opacity: 0.6;
+}
+
+.menu-divider {
+  height: 1px;
+  margin: 6px 4px;
+  background: var(--border);
+}
+
+.menu-item-danger:hover {
+  background: rgba(217, 54, 54, 0.12);
+  color: var(--danger);
 }
 
 .add-channel-form {
@@ -106,12 +139,13 @@
 }
 
 .add-channel-form input {
-  width: 240px;
+  width: 220px;
   padding: 7px 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--bg-inset);
   color: var(--text-h);
+  font-size: 14px;
   transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
@@ -698,6 +732,44 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+/* Settings modal */
+
+.settings-modal {
+  width: min(92vw, 420px);
+}
+
+.settings-modal h2 {
+  margin: 0 0 16px;
+  font-size: 17px;
+  color: var(--text-h);
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+
+.settings-row:first-of-type {
+  border-top: none;
+}
+
+.settings-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.settings-hint {
+  display: block;
+  font-size: 12px;
+  color: var(--text);
 }
 
 @keyframes fade-in {
