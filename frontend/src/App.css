@@ -14,6 +14,36 @@
   padding: 10px 16px;
   background: var(--bg-elev);
   border-bottom: 1px solid var(--border);
+  transition: padding 0.15s ease;
+}
+
+.app-topbar.collapsed {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+/* No iframes live in the top bar (unlike the chat bar), so collapsing can
+   just unmount the controls instead of needing a visibility-only hide. */
+.topbar-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.topbar-toggle svg {
+  transition: transform 0.15s ease;
+}
+
+.topbar-toggle:hover {
+  background: var(--bg-inset);
+  color: var(--text-h);
 }
 
 .brand {
@@ -55,10 +85,18 @@
   color: var(--text-h);
 }
 
-.auth-account {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.account-trigger {
+  padding-left: 6px;
+}
+
+.account-panel {
+  width: 160px;
+  padding: 6px;
+}
+
+.btn-block {
+  width: 100%;
+  justify-content: center;
 }
 
 .add-channel-form {

@@ -6,7 +6,8 @@ import VideoGrid from './components/VideoGrid'
 import ChatBar from './components/ChatBar'
 import TemplateManager from './components/TemplateManager'
 import FollowedLive from './components/FollowedLive'
-import { IconTwitch, LogoMark } from './components/icons'
+import AccountMenu from './components/AccountMenu'
+import { IconChevronDown, IconTwitch, LogoMark } from './components/icons'
 import './App.css'
 
 const BACKEND_URL = 'http://localhost:3000'
@@ -15,6 +16,7 @@ function App() {
   const [user, setUser] = useState(null)
   const [checked, setChecked] = useState(false)
   const [loginPrompt, setLoginPrompt] = useState(null)
+  const [topbarOpen, setTopbarOpen] = useState(true)
   const [state, dispatch] = useReducer(gridReducer, initialGridState)
 
   // Dev-only hook: lets browser automation drive the reducer directly (e.g.
@@ -101,54 +103,60 @@ function App() {
 
   return (
     <div className="app-shell">
-      <header className="app-topbar">
+      <header className={`app-topbar${topbarOpen ? '' : ' collapsed'}`}>
         <div className="brand">
           <LogoMark />
           <span className="brand-name">StreamHive</span>
         </div>
-        <div className="topbar-controls">
-          <TemplateManager
-            user={user}
-            gridState={state}
-            onLoadTemplate={loadTemplate}
-            onLogin={login}
-            onSessionExpired={() => setUser(null)}
-          />
-          <AddChannelForm
-            channelCount={state.channels.length}
-            onAdd={(loginName) => dispatch({ type: 'ADD_CHANNEL', loginName })}
-          />
-        </div>
-        {checked && (
-          <div className="auth-bar">
-            {user && (
-              <FollowedLive
-                channels={state.channels}
-                onAdd={(loginName) => dispatch({ type: 'ADD_CHANNEL', loginName })}
+        <button
+          type="button"
+          className="topbar-toggle"
+          onClick={() => setTopbarOpen((v) => !v)}
+          title={topbarOpen ? 'Collapse top bar' : 'Expand top bar'}
+          aria-label={topbarOpen ? 'Collapse top bar' : 'Expand top bar'}
+          aria-expanded={topbarOpen}
+        >
+          <IconChevronDown style={{ transform: topbarOpen ? 'rotate(180deg)' : 'none' }} />
+        </button>
+        {topbarOpen && (
+          <>
+            <div className="topbar-controls">
+              <TemplateManager
+                user={user}
+                gridState={state}
+                onLoadTemplate={loadTemplate}
+                onLogin={login}
                 onSessionExpired={() => setUser(null)}
               />
+              <AddChannelForm
+                channelCount={state.channels.length}
+                onAdd={(loginName) => dispatch({ type: 'ADD_CHANNEL', loginName })}
+              />
+            </div>
+            {checked && (
+              <div className="auth-bar">
+                {user && (
+                  <FollowedLive
+                    channels={state.channels}
+                    onAdd={(loginName) => dispatch({ type: 'ADD_CHANNEL', loginName })}
+                    onSessionExpired={() => setUser(null)}
+                  />
+                )}
+                <AudioModeControl
+                  audioMode={state.audioMode}
+                  onSetAudioMode={(mode) => dispatch({ type: 'SET_AUDIO_MODE', mode })}
+                />
+                {user ? (
+                  <AccountMenu user={user} onLogout={logout} />
+                ) : (
+                  <button type="button" className="btn btn-twitch" onClick={login}>
+                    <IconTwitch />
+                    <span>Log in with Twitch</span>
+                  </button>
+                )}
+              </div>
             )}
-            {user && (
-              <span className="auth-account">
-                <img className="auth-avatar" src={user.avatarUrl} alt="" width={28} height={28} />
-                <span className="auth-name">{user.displayName}</span>
-              </span>
-            )}
-            <AudioModeControl
-              audioMode={state.audioMode}
-              onSetAudioMode={(mode) => dispatch({ type: 'SET_AUDIO_MODE', mode })}
-            />
-            {user ? (
-              <button type="button" className="btn btn-ghost" onClick={logout}>
-                Log out
-              </button>
-            ) : (
-              <button type="button" className="btn btn-twitch" onClick={login}>
-                <IconTwitch />
-                <span>Log in with Twitch</span>
-              </button>
-            )}
-          </div>
+          </>
         )}
       </header>
 
