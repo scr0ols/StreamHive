@@ -22,12 +22,17 @@ export default function AddChannelForm({ channelCount, onAdd }) {
         onChange={(e) => setValue(e.target.value)}
         disabled={atCap}
         aria-label="Twitch channel name"
+        title={atCap ? `Max ${MAX_CHANNELS} channels reached` : undefined}
       />
-      <button type="submit" className="btn btn-quiet" disabled={atCap}>
+      <button
+        type="submit"
+        className="btn btn-quiet"
+        disabled={atCap}
+        title={atCap ? `Max ${MAX_CHANNELS} channels reached` : undefined}
+      >
         <IconPlus />
         <span>Add</span>
       </button>
-      {atCap && <span className="add-channel-cap">5-channel max reached</span>}
     </form>
   )
 }

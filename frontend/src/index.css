@@ -188,6 +188,15 @@ input {
   filter: none;
 }
 
+.btn-ghost:disabled {
+  opacity: 0.5;
+  filter: none;
+}
+
+.btn-ghost:disabled:hover {
+  background: transparent;
+}
+
 /* Same transparent/bordered shape as .btn-ghost, but the accent color on
    text/icon marks it as the form's action without a heavy solid fill. */
 .btn-quiet {

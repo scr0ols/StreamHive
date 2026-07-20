@@ -161,9 +161,9 @@
   outline: none;
 }
 
-.add-channel-cap {
-  font-size: 13px;
-  color: var(--danger);
+.add-channel-form input:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .segmented {
