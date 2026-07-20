@@ -2,6 +2,8 @@
 
 Watch 2 to 6 Twitch channels at once in a single grid — one screen, sane audio, no setup required on the streamers' side. Built on the official Twitch Embed API for video and chat.
 
+**Try it live:** [stream-hive-ten.vercel.app](https://stream-hive-ten.vercel.app) — the backend runs on Render's free tier, so the first request after a period of inactivity can take up to a minute to wake up.
+
 <!-- TODO: screenshot/GIF of the grid in action, once the honeycomb-identity UI lands on dev -->
 
 ## Features at a glance
