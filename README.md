@@ -23,13 +23,14 @@ Twitch OAuth login is wired into the app shell and gates the follow action;
 anonymous read-only viewing works without login.
 
 Account features (Phase 2): saving/loading/deleting named grid templates
-from the toolbar (login-gated, with channel validation on load — renamed or
-banned channels render a "channel not found" panel), and a "Following"
-list showing which channels the logged-in user follows that are live right
-now, with one-click add-to-grid (requires the `user:read:follows` OAuth
-scope; users who logged in before the scope change are re-prompted to log
-in). Twitch tokens are refreshed server-side on expiry; nothing from the
-Twitch API is ever persisted.
+from the top bar (login-gated, with channel validation on load — renamed or
+banned channels render a "channel not found" panel), and an "Online now"
+menu with two sections — channels the logged-in user follows that are live
+right now, and the current top live channels on Twitch by viewer count —
+each with one-click add-to-grid (following requires the `user:read:follows`
+OAuth scope; users who logged in before the scope change are re-prompted to
+log in). Twitch tokens are refreshed server-side on expiry; nothing from
+the Twitch API is ever persisted.
 
 ## Setup
 
