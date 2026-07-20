@@ -191,7 +191,7 @@
 
 .segmented button.active {
   background: var(--bg-elev);
-  color: var(--accent);
+  color: var(--accent-text);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 
@@ -412,7 +412,7 @@
 }
 
 .listen-btn.listening {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .listen-btn:disabled:hover {
@@ -532,7 +532,7 @@
 
 .chat-tab.active {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .chat-tab-name {
@@ -671,7 +671,7 @@
 }
 
 .template-status.ok {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .template-status.err {

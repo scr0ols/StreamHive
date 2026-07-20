@@ -1,14 +1,18 @@
 :root {
-  /* Light theme */
-  --bg: #f6f6f9;
-  --bg-elev: #ffffff;
-  --bg-inset: #eceaf1;
-  --border: #e0dee6;
-  --text: #5f5b6b;
-  --text-h: #0e0c14;
-  --accent: #8b3dff;
-  --accent-strong: #772ce8;
-  --accent-soft: rgba(139, 61, 255, 0.12);
+  /* Light theme (Honeycomb Amber) */
+  --bg: #f7f2e8;
+  --bg-elev: #eee6d4;
+  --bg-inset: #e3d7bc;
+  --border: #d2c3a0;
+  --text: #6b5a42;
+  --text-h: #2c2318;
+  --accent: #f5a623;
+  --accent-strong: #d6841f;
+  --accent-soft: rgba(245, 166, 35, 0.12);
+  /* Text/link-safe stand-in for --accent: accent only clears ~2:1 contrast
+     on the light bg (fine for icons/fills/borders, fails AA for text), so
+     text-colored "active"/"success" states use text-h here instead. */
+  --accent-text: #2c2318;
   --danger: #d93636;
   --live: #eb0400;
   --shadow: 0 8px 24px rgba(14, 12, 20, 0.12);
@@ -23,15 +27,16 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0e0e13;
-    --bg-elev: #17171e;
-    --bg-inset: #21212b;
-    --border: #2a2a36;
-    --text: #a3a1ad;
-    --text-h: #f2f1f5;
-    --accent: #a970ff;
-    --accent-strong: #9147ff;
-    --accent-soft: rgba(169, 112, 255, 0.16);
+    --bg: #15110c;
+    --bg-elev: #211a12;
+    --bg-inset: #2c2318;
+    --border: #3e3120;
+    --text: #a99a82;
+    --text-h: #f7f2e8;
+    --accent: #f5a623;
+    --accent-strong: #d6841f;
+    --accent-soft: rgba(245, 166, 35, 0.16);
+    --accent-text: #f5a623;
     --danger: #ff5c5c;
     --live: #eb0400;
     --shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
@@ -42,30 +47,32 @@
    so they win regardless of the OS preference once data-theme is set;
    removing the attribute (System option) hands control back to the query. */
 :root[data-theme='light'] {
-  --bg: #f6f6f9;
-  --bg-elev: #ffffff;
-  --bg-inset: #eceaf1;
-  --border: #e0dee6;
-  --text: #5f5b6b;
-  --text-h: #0e0c14;
-  --accent: #8b3dff;
-  --accent-strong: #772ce8;
-  --accent-soft: rgba(139, 61, 255, 0.12);
+  --bg: #f7f2e8;
+  --bg-elev: #eee6d4;
+  --bg-inset: #e3d7bc;
+  --border: #d2c3a0;
+  --text: #6b5a42;
+  --text-h: #2c2318;
+  --accent: #f5a623;
+  --accent-strong: #d6841f;
+  --accent-soft: rgba(245, 166, 35, 0.12);
+  --accent-text: #2c2318;
   --danger: #d93636;
   --live: #eb0400;
   --shadow: 0 8px 24px rgba(14, 12, 20, 0.12);
 }
 
 :root[data-theme='dark'] {
-  --bg: #0e0e13;
-  --bg-elev: #17171e;
-  --bg-inset: #21212b;
-  --border: #2a2a36;
-  --text: #a3a1ad;
-  --text-h: #f2f1f5;
-  --accent: #a970ff;
-  --accent-strong: #9147ff;
-  --accent-soft: rgba(169, 112, 255, 0.16);
+  --bg: #15110c;
+  --bg-elev: #211a12;
+  --bg-inset: #2c2318;
+  --border: #3e3120;
+  --text: #a99a82;
+  --text-h: #f7f2e8;
+  --accent: #f5a623;
+  --accent-strong: #d6841f;
+  --accent-soft: rgba(245, 166, 35, 0.16);
+  --accent-text: #f5a623;
   --danger: #ff5c5c;
   --live: #eb0400;
   --shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
@@ -121,6 +128,51 @@ body {
 
 *::-webkit-scrollbar-corner {
   background: transparent;
+}
+
+/* Brand mark: two stacked SVGs (full-color + mono-white), theme controlled
+   by the same media-query/data-theme rules as the color tokens above. The
+   mono-white variant exists because the colored mark's dark facets blend
+   into the dark theme's near-black surfaces. */
+.logo-mark {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.logo-mark svg {
+  position: absolute;
+  inset: 0;
+}
+
+.logo-mark-mono {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .logo-mark-color {
+    display: none;
+  }
+
+  .logo-mark-mono {
+    display: block;
+  }
+}
+
+:root[data-theme='light'] .logo-mark-color {
+  display: block;
+}
+
+:root[data-theme='light'] .logo-mark-mono {
+  display: none;
+}
+
+:root[data-theme='dark'] .logo-mark-color {
+  display: none;
+}
+
+:root[data-theme='dark'] .logo-mark-mono {
+  display: block;
 }
 
 button {
@@ -202,7 +254,7 @@ input {
 .btn-quiet {
   background: transparent;
   border-color: var(--border);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .btn-quiet:hover {
