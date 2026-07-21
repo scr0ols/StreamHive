@@ -47,16 +47,22 @@ Requires a Twitch app (Confidential client type) registered in the [Twitch Devel
    TWITCH_CLIENT_SECRET=<your client secret>
    TWITCH_REDIRECT_URI=http://localhost:3000/auth/twitch/callback
    DATABASE_URL=<your Postgres connection string>
+   TOKEN_ENCRYPTION_KEY=<64-char hex string, 32 bytes, for AES-256-GCM>
    ```
-2. `npm install`
-3. `npm run dev`
+2. Run `schema.sql` against that database to create the `users`, `templates`, and `sessions` tables.
+3. `npm install`
+4. `npm run dev`
+
+For a deployed backend, also set `NODE_ENV=production`. Frontend and backend live on different domains once deployed, which makes the session cookie a cross-site request — that only works with `Secure`/`SameSite=None`, which the backend only sets when `NODE_ENV=production`.
 
 **Frontend** (`frontend/`):
 
 1. `npm install`
 2. `npm run dev`, then open `http://localhost:5173`
 
-Sessions are in-memory on the backend for now (they just map a session cookie to a `users.id`), so everyone has to re-login on every backend restart. Users and templates themselves are persisted in Postgres.
+No `.env` needed for local dev — it defaults to `http://localhost:3000`. For a deployed build, set `VITE_BACKEND_URL` to the deployed backend's URL (Vite only exposes `VITE_`-prefixed vars to client code, and only bakes them in at build time, so this has to be set wherever the frontend is built, not just at runtime).
+
+Sessions map a session cookie to a `users.id` and are persisted in Postgres (see `schema.sql`), so they survive a backend restart or redeploy. Users and templates are persisted in Postgres too.
 
 ## Learn more
 
