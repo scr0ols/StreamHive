@@ -52,6 +52,7 @@ tier).
    TWITCH_CLIENT_SECRET=<your client secret>
    TWITCH_REDIRECT_URI=http://localhost:3000/auth/twitch/callback
    DATABASE_URL=<your Postgres connection string>
+   TOKEN_ENCRYPTION_KEY=<64-char hex string, 32 bytes, for AES-256-GCM>
    ```
 2. Run `schema.sql` against that database to create the `users`, `templates`, and `sessions` tables.
 3. `npm install`
