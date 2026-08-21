@@ -1,5 +1,5 @@
 export const MAX_CHANNELS = 6
-export const MIN_CHANNELS = 2
+export const MIN_CHANNELS = 1
 
 export const initialGridState = {
   channels: [], // { id, loginName, addedAt, online }

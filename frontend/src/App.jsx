@@ -176,7 +176,7 @@ function App() {
             <div className="empty-state">
               <LogoMark size={40} variant="primary" className="empty-state-mark" />
               <p className="empty-state-title">One screen. Every stream that matters.</p>
-              <p>Add at least {MIN_CHANNELS} channels to start viewing.</p>
+              <p>Add a channel to start viewing.</p>
             </div>
           ) : (
             <VideoGrid
