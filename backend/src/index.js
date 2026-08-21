@@ -343,7 +343,7 @@ app.get('/api/followed-streams', requireAuth, async (req, res) => {
 // Mirrors frontend/src/gridReducer.js's MIN_CHANNELS/MAX_CHANNELS and
 // audioMode values — kept in sync manually since frontend and backend are
 // separate apps with no shared package.
-const MIN_CHANNELS = 2;
+const MIN_CHANNELS = 1;
 const MAX_CHANNELS = 6;
 const AUDIO_MODES = ['selection', 'both'];
 

@@ -255,6 +255,10 @@
   gap: 12px;
 }
 
+.video-grid-symmetric.count-1 {
+  grid-template-columns: 1fr;
+}
+
 .video-grid-symmetric.count-2 {
   grid-template-columns: repeat(2, 1fr);
 }
@@ -311,6 +315,10 @@
   grid-template-columns: 3fr 1fr;
   gap: 12px;
   height: 100%;
+}
+
+.video-grid-focus.video-grid-focus-solo {
+  grid-template-columns: 1fr;
 }
 
 .video-grid-focus .video-panel:not(.focused) {

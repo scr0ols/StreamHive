@@ -1,6 +1,6 @@
 # StreamHive
 
-Watch 2 to 6 Twitch channels at once in a single grid, using the official Twitch Embed API for video and chat. No setup required on the streamers' side. Three audio modes (Selection, Both/All, and an exploratory SmartVoiceSwitch), plus layout templates saved to a lightweight account via Twitch OAuth login.
+Watch 1 to 6 Twitch channels at once in a single grid, using the official Twitch Embed API for video and chat. No setup required on the streamers' side. Three audio modes (Selection, Both/All, and an exploratory SmartVoiceSwitch), plus layout templates saved to a lightweight account via Twitch OAuth login.
 
 **Live app:** [stream-hive-ten.vercel.app](https://stream-hive-ten.vercel.app) — the backend runs on Render's free tier, so the first request after a period of inactivity can take up to a minute to wake up.
 
@@ -16,7 +16,7 @@ Full architecture, data model, and reasoning behind these choices are kept in lo
 ## Status
 
 The core viewing experience works end to end against real Twitch channels:
-a 2–6 channel video grid with add/remove, both audio modes (Selection with
+a 1–6 channel video grid with add/remove, both audio modes (Selection with
 focus-follows-audio layout, Both/All with per-panel volume), online/offline
 detection via a backend Helix poll, a chat bar with one always-mounted tab
 per channel (chat follows the active audio channel until manually
@@ -52,6 +52,7 @@ tier).
    TWITCH_CLIENT_SECRET=<your client secret>
    TWITCH_REDIRECT_URI=http://localhost:3000/auth/twitch/callback
    DATABASE_URL=<your Postgres connection string>
+   TOKEN_ENCRYPTION_KEY=<64-char hex string, 32 bytes, for AES-256-GCM>
    ```
 2. Run `schema.sql` against that database to create the `users`, `templates`, and `sessions` tables.
 3. `npm install`

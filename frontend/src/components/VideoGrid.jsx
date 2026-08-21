@@ -13,6 +13,7 @@ export default function VideoGrid({
 }) {
   const focusMode = audioMode === 'selection'
   const otherChannels = focusMode ? channels.filter((c) => c.id !== activeAudioChannelId) : []
+  const soloFocus = focusMode && otherChannels.length === 0
 
   function panelGridStyle(channel) {
     if (!focusMode) return undefined
@@ -25,7 +26,11 @@ export default function VideoGrid({
 
   return (
     <div
-      className={`video-grid ${focusMode ? 'video-grid-focus' : `video-grid-symmetric count-${channels.length}`}`}
+      className={`video-grid ${
+        focusMode
+          ? `video-grid-focus${soloFocus ? ' video-grid-focus-solo' : ''}`
+          : `video-grid-symmetric count-${channels.length}`
+      }`}
     >
       {channels.map((channel) => (
         <VideoPanel

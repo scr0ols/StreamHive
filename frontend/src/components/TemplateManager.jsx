@@ -136,14 +136,14 @@ export default function TemplateManager({ user, gridState, onLoadTemplate, onLog
                     type="submit"
                     className="btn btn-primary"
                     disabled={!canSave || !saveName.trim() || saveStatus === 'saving'}
-                    title={canSave ? 'Save the current grid as a template' : `Add at least ${MIN_CHANNELS} channels first`}
+                    title={canSave ? 'Save the current grid as a template' : 'Add a channel first'}
                   >
                     {saveStatus === 'saving' ? 'Saving…' : 'Save'}
                   </button>
                 </form>
                 {saveStatus === 'saved' && <p className="template-status ok">Saved.</p>}
                 {saveStatus === 'error' && <p className="template-status err">{saveError}</p>}
-                {!canSave && <p className="template-status">Add at least {MIN_CHANNELS} channels to save.</p>}
+                {!canSave && <p className="template-status">Add a channel to save.</p>}
 
                 <div className="template-list">
                   {listError && <p className="template-status err">Couldn't load templates.</p>}
