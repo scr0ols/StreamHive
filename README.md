@@ -54,22 +54,39 @@ tier).
    DATABASE_URL=<your Postgres connection string>
    TOKEN_ENCRYPTION_KEY=<64-char hex string, 32 bytes, for AES-256-GCM>
    ```
+   Generate `TOKEN_ENCRYPTION_KEY` with `openssl rand -hex 32`. The backend
+   refuses to start without it. Keep it stable: changing it makes every stored
+   token undecryptable and forces all users to log in again.
 2. Run `schema.sql` against that database to create the `users`, `templates`, and `sessions` tables.
 3. `npm install`
 4. `npm run dev`
 
-For a deployed backend, also set `NODE_ENV=production`. Frontend and backend live on different domains once deployed, which makes the session cookie a cross-site request — that only works with `Secure`/`SameSite=None`, which the backend only sets when `NODE_ENV=production`.
+For a deployed backend, also set `NODE_ENV=production` (the backend only marks
+the session cookie `Secure` outside local dev) and point `TWITCH_REDIRECT_URI`
+at the *frontend's* callback URL, e.g.
+`https://<your-frontend>/auth/twitch/callback`, so the callback reaches the
+backend through the proxy described below. That URL also has to be registered
+under OAuth Redirect URLs in the Twitch console.
 
 **Frontend** (`frontend/`):
 
 1. `npm install`
 2. `npm run dev`, then open `http://localhost:5173`
 
-No `.env` needed for local dev — it defaults to `http://localhost:3000`. For
-a deployed build, set `VITE_BACKEND_URL` to the deployed backend's URL
-(Vite only exposes `VITE_`-prefixed vars to client code, and only bakes them
-in at build time, so this has to be set wherever the frontend is built, not
-just at runtime).
+No `.env` needed for local dev — it defaults to `http://localhost:3000`.
+
+A deployed build needs no backend URL either, and `VITE_BACKEND_URL` should be
+left unset: `vercel.json` proxies `/api/*` and `/auth/*` to the backend, so the
+frontend calls them as relative paths on its own origin. That keeps the session
+cookie first-party. Hosting the two on separate domains instead makes it a
+third-party cookie, which browsers drop — the login then completes without ever
+signing you in. Update the `destination` URLs in `vercel.json` if the backend
+moves.
+
+Setting `VITE_BACKEND_URL` overrides the proxy and calls the backend directly;
+it exists for local dev and non-proxied hosts. Vite only exposes `VITE_`-prefixed
+vars to client code and bakes them in at build time, so it has to be set wherever
+the frontend is built, not just at runtime.
 
 Sessions map a session cookie to a `users.id` and are persisted in Postgres
 (see `schema.sql`), so they survive a backend restart or redeploy.
