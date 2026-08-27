@@ -750,6 +750,34 @@
   color: var(--text-h);
 }
 
+/* Auth error banner (?error=auth_failed after a failed Twitch OAuth callback) */
+
+.auth-error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  animation: fade-in 0.15s ease;
+}
+
+.auth-error-dismiss {
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.auth-error-dismiss:hover {
+  opacity: 0.8;
+}
+
 /* Login prompt modal */
 
 .modal-backdrop {
