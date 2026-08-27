@@ -25,9 +25,24 @@ function App() {
   const [user, setUser] = useState(null)
   const [checked, setChecked] = useState(false)
   const [loginPrompt, setLoginPrompt] = useState(null)
+  const [authError, setAuthError] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [topbarOpen, setTopbarOpen] = useState(true)
   const [state, dispatch] = useReducer(gridReducer, undefined, initGridState)
+
+  // The backend redirects here with ?error=auth_failed when the Twitch OAuth
+  // callback fails (bad/misconfigured secret, Twitch outage, etc.) instead
+  // of showing its own raw error page. Surface it once, then strip the
+  // param so a refresh or share of the URL doesn't re-show the banner.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('error') !== 'auth_failed') return
+
+    setAuthError(true)
+    params.delete('error')
+    const query = params.toString()
+    window.history.replaceState({}, '', window.location.pathname + (query ? `?${query}` : '') + window.location.hash)
+  }, [])
 
   // Dev-only hook: lets browser automation drive the reducer directly (e.g.
   // to exercise SET_STATE without an authenticated session). Stripped from
@@ -149,6 +164,19 @@ function App() {
 
   return (
     <div className="app-shell">
+      {authError && (
+        <div className="auth-error-banner" role="alert">
+          <span>Login with Twitch failed. Please try again.</span>
+          <button
+            type="button"
+            className="auth-error-dismiss"
+            onClick={() => setAuthError(false)}
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
+        </div>
+      )}
       <header className={`app-topbar${topbarOpen ? '' : ' collapsed'}`}>
         <div className="brand">
           <LogoMark />
