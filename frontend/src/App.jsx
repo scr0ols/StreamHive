@@ -36,11 +36,47 @@ function App() {
     if (import.meta.env.DEV) window.__streamhive = { dispatch }
   }, [])
 
+  // /auth/me hits the Render free-tier backend, which can take up to ~a
+  // minute to wake from cold. We cap each attempt at 9s and retry once so a
+  // sleeping backend can't leave `checked` (and therefore the auth bar)
+  // hanging indefinitely — see the render below for how "unknown" is treated
+  // as "logged out" rather than "not rendered".
   useEffect(() => {
-    fetch(`${BACKEND_URL}/auth/me`, { credentials: 'include' })
-      .then((res) => (res.ok ? res.json() : null))
-      .then(setUser)
-      .finally(() => setChecked(true))
+    let cancelled = false
+
+    async function fetchMeOnce(timeoutMs) {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+      try {
+        const res = await fetch(`${BACKEND_URL}/auth/me`, { credentials: 'include', signal: controller.signal })
+        return res.ok ? await res.json() : null
+      } finally {
+        clearTimeout(timeoutId)
+      }
+    }
+
+    async function checkAuth() {
+      try {
+        const me = await fetchMeOnce(9000)
+        if (!cancelled) setUser(me)
+      } catch {
+        // First attempt likely timed out against a cold backend; it's woken
+        // up by now, so retry once before giving up.
+        try {
+          const me = await fetchMeOnce(9000)
+          if (!cancelled) setUser(me)
+        } catch {
+          if (!cancelled) setUser(null)
+        }
+      } finally {
+        if (!cancelled) setChecked(true)
+      }
+    }
+
+    checkAuth()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const channelsRef = useRef(state.channels)
@@ -143,29 +179,33 @@ function App() {
                 onAdd={(loginName) => dispatch({ type: 'ADD_CHANNEL', loginName })}
               />
             </div>
-            {checked && (
-              <div className="auth-bar">
-                {user && (
-                  <FollowedLive
-                    channels={state.channels}
-                    onAdd={(loginName) => dispatch({ type: 'ADD_CHANNEL', loginName })}
-                    onSessionExpired={() => setUser(null)}
-                  />
-                )}
-                <AudioModeControl
-                  audioMode={state.audioMode}
-                  onSetAudioMode={(mode) => dispatch({ type: 'SET_AUDIO_MODE', mode })}
+            <div className="auth-bar">
+              {user && (
+                <FollowedLive
+                  channels={state.channels}
+                  onAdd={(loginName) => dispatch({ type: 'ADD_CHANNEL', loginName })}
+                  onSessionExpired={() => setUser(null)}
                 />
-                {user ? (
-                  <AccountMenu user={user} onLogout={logout} onOpenSettings={() => setSettingsOpen(true)} />
-                ) : (
-                  <button type="button" className="btn btn-twitch" onClick={login}>
-                    <IconTwitch />
-                    <span>Log in with Twitch</span>
-                  </button>
-                )}
-              </div>
-            )}
+              )}
+              <AudioModeControl
+                audioMode={state.audioMode}
+                onSetAudioMode={(mode) => dispatch({ type: 'SET_AUDIO_MODE', mode })}
+              />
+              {user ? (
+                <AccountMenu user={user} onLogout={logout} onOpenSettings={() => setSettingsOpen(true)} />
+              ) : (
+                <button
+                  type="button"
+                  className="btn btn-twitch"
+                  onClick={login}
+                  disabled={!checked}
+                  title={checked ? undefined : 'Checking session…'}
+                >
+                  <IconTwitch />
+                  <span>Log in with Twitch</span>
+                </button>
+              )}
+            </div>
           </>
         )}
       </header>
