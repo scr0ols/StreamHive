@@ -192,6 +192,11 @@ input {
   color: #fff;
 }
 
+.btn-twitch:disabled {
+  opacity: 0.5;
+  filter: none;
+}
+
 .btn-ghost {
   background: transparent;
   border-color: var(--border);
