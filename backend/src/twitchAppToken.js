@@ -1,11 +1,13 @@
+import { TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET } from './env.js'
+
 let cached = null // { token, expiresAt }
 
 export async function getAppAccessToken() {
   if (cached && cached.expiresAt > Date.now() + 60_000) return cached.token
 
   const url = new URL('https://id.twitch.tv/oauth2/token')
-  url.searchParams.set('client_id', process.env.TWITCH_CLIENT_ID)
-  url.searchParams.set('client_secret', process.env.TWITCH_CLIENT_SECRET)
+  url.searchParams.set('client_id', TWITCH_CLIENT_ID)
+  url.searchParams.set('client_secret', TWITCH_CLIENT_SECRET)
   url.searchParams.set('grant_type', 'client_credentials')
 
   const response = await fetch(url, { method: 'POST' })
