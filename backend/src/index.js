@@ -7,20 +7,21 @@ import { pool } from './db.js';
 import { getAppAccessToken } from './twitchAppToken.js';
 import { getUserAccessToken, ReloginRequiredError } from './twitchUserToken.js';
 import { assertEncryptionKeyConfigured, encryptToken } from './tokenCrypto.js';
-
-const {
-  PORT = 3000,
+import {
   FRONTEND_URL,
   TWITCH_CLIENT_ID,
   TWITCH_CLIENT_SECRET,
   TWITCH_REDIRECT_URI,
-} = process.env;
+  twitchClientIdEnv,
+  twitchClientSecretEnv,
+  twitchRedirectUriEnv,
+} from './env.js';
 
-if (!FRONTEND_URL) {
-  throw new Error('FRONTEND_URL is not set — refusing to start with cors() defaulting to origin "*"');
-}
+const { PORT = 3000 } = process.env;
+
 // Fails fast (see TOKEN_ENCRYPTION_KEY in tokenCrypto.js) rather than only
-// surfacing on the first login attempt.
+// surfacing on the first login attempt. FRONTEND_URL/TWITCH_* env vars are
+// validated as a side effect of importing ./env.js above.
 assertEncryptionKeyConfigured();
 
 const app = express();
@@ -117,7 +118,20 @@ app.get('/auth/twitch/callback', async (req, res) => {
   const tokenResponse = await fetch(tokenUrl, { method: 'POST' });
   if (!tokenResponse.ok) {
     const body = await tokenResponse.text();
-    return res.status(502).send(`Token exchange failed: ${body}`);
+    // Twitch's error body itself never contains the secret, only the
+    // outcome (e.g. "invalid client secret") — safe to log server-side.
+    // The client-id/secret length + normalization flags are the fast way to
+    // tell "wrong value" apart from "value got mangled in transit".
+    console.error('Twitch token exchange failed:', {
+      status: tokenResponse.status,
+      body: body.slice(0, 500),
+      clientIdLength: twitchClientIdEnv.length,
+      clientIdWasNormalized: twitchClientIdEnv.wasNormalized,
+      clientSecretLength: twitchClientSecretEnv.length,
+      clientSecretWasNormalized: twitchClientSecretEnv.wasNormalized,
+      redirectUriWasNormalized: twitchRedirectUriEnv.wasNormalized,
+    });
+    return res.redirect(`${FRONTEND_URL}?error=auth_failed`);
   }
   const tokens = await tokenResponse.json();
 
@@ -129,7 +143,8 @@ app.get('/auth/twitch/callback', async (req, res) => {
   });
   if (!userResponse.ok) {
     const body = await userResponse.text();
-    return res.status(502).send(`User lookup failed: ${body}`);
+    console.error('Twitch user lookup failed:', { status: userResponse.status, body: body.slice(0, 500) });
+    return res.redirect(`${FRONTEND_URL}?error=auth_failed`);
   }
   const { data } = await userResponse.json();
   const twitchUser = data[0];

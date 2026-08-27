@@ -1,5 +1,6 @@
 import { pool } from './db.js'
 import { encryptToken, decryptToken } from './tokenCrypto.js'
+import { TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET } from './env.js'
 
 // Thrown when the user's tokens can't produce a valid access token anymore
 // (refresh token revoked/invalid). Callers clear the session and force a
@@ -28,8 +29,8 @@ const refreshesInFlight = new Map()
 
 async function refreshAccessToken(userId, refreshToken) {
   const url = new URL('https://id.twitch.tv/oauth2/token')
-  url.searchParams.set('client_id', process.env.TWITCH_CLIENT_ID)
-  url.searchParams.set('client_secret', process.env.TWITCH_CLIENT_SECRET)
+  url.searchParams.set('client_id', TWITCH_CLIENT_ID)
+  url.searchParams.set('client_secret', TWITCH_CLIENT_SECRET)
   url.searchParams.set('grant_type', 'refresh_token')
   url.searchParams.set('refresh_token', refreshToken)
 
