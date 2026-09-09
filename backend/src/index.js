@@ -532,17 +532,11 @@ app.post('/api/templates', templateWriteRateLimit, requireSameOrigin, requireAut
   if (validationError) return res.status(400).json({ error: validationError });
 
   const { name, channels, audioMode, activeChannel, volumes, chatBarOpen } = req.body;
-  const { rows: countRows } = await db.query(
-    'SELECT COUNT(*)::int AS count FROM templates WHERE user_id = $1',
-    [req.userId],
-  );
-  if (Number(countRows[0]?.count ?? 0) >= MAX_TEMPLATES_PER_USER) {
-    return res.status(429).json({ error: 'Template quota reached.' });
-  }
   const now = new Date().toISOString();
   const { rows } = await db.query(
     `INSERT INTO templates (id, user_id, name, channels, audio_mode, active_channel, volumes, chat_bar_open, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9)
+     SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $9
+     WHERE (SELECT COUNT(*) FROM templates WHERE user_id = $2) < $10
      RETURNING *`,
     [
       crypto.randomUUID(),
@@ -554,8 +548,12 @@ app.post('/api/templates', templateWriteRateLimit, requireSameOrigin, requireAut
       volumes ? JSON.stringify(volumes) : null,
       chatBarOpen ? 1 : 0,
       now,
+      MAX_TEMPLATES_PER_USER,
     ],
   );
+  if (!rows[0]) {
+    return res.status(429).json({ error: 'Template quota reached.' });
+  }
   res.status(201).json(serializeTemplate(rows[0]));
 });
 

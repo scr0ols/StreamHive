@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import test from 'node:test';
+
+const execFileAsync = promisify(execFile);
 
 process.env.NODE_ENV = 'test';
 process.env.FRONTEND_URL = 'http://frontend.test';
@@ -21,6 +24,28 @@ function fakeDb({ session = null, templateCount = 0 } = {}) {
         return { rows: session ? [session] : [] };
       }
       if (sql.startsWith('SELECT COUNT(*)')) return { rows: [{ count: templateCount }] };
+      if (sql.startsWith('INSERT INTO templates')) {
+        if (templateCount >= 100) return { rows: [], rowCount: 0 };
+        const [id, userId, name, channels, audioMode, activeChannel, volumes, chatBarOpen, now] = params;
+        return {
+          rows: [
+            {
+              id,
+              user_id: userId,
+              name,
+              channels,
+              audio_mode: audioMode,
+              active_channel: activeChannel,
+              volumes,
+              chat_bar_open: chatBarOpen,
+              is_public: 0,
+              created_at: now,
+              updated_at: now,
+            },
+          ],
+          rowCount: 1,
+        };
+      }
       if (sql.startsWith('DELETE FROM sessions')) return { rowCount: 1, rows: [] };
       return { rows: [], rowCount: 0 };
     },
@@ -203,7 +228,19 @@ test('template writes enforce field bounds and per-user quota', async () => {
   });
 });
 
-test('backend lockfile resolves qs to the patched version', async () => {
-  const lockfile = JSON.parse(await readFile(new URL('../package-lock.json', import.meta.url), 'utf8'));
-  assert.equal(lockfile.packages['node_modules/qs'].version, '6.16.0');
+test('backend dependency tree has no known qs advisories', async () => {
+  const cwd = new URL('..', import.meta.url);
+  let stdout;
+  try {
+    ({ stdout } = await execFileAsync('npm', ['audit', '--omit=dev', '--json'], { cwd }));
+  } catch (err) {
+    // npm audit exits non-zero when it finds vulnerabilities; its JSON report is still on stdout.
+    stdout = err.stdout;
+  }
+  const report = JSON.parse(stdout);
+  assert.equal(
+    report.metadata.vulnerabilities.total,
+    0,
+    `expected no vulnerabilities, found: ${JSON.stringify(report.vulnerabilities)}`,
+  );
 });
