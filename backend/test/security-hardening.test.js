@@ -253,6 +253,117 @@ test('template writes enforce field bounds and per-user quota', async () => {
   });
 });
 
+// Models Postgres's pg_advisory_xact_lock semantics closely enough to prove
+// the route serializes concurrent writers per user: a lock acquired inside
+// one connection's transaction blocks any other connection's lock request
+// for the same key until that transaction COMMITs or ROLLBACKs. If the route
+// stopped taking the lock (or took it after the COUNT check), concurrent
+// requests would interleave their COUNT queries before any INSERT commits
+// and blow through the cap — exactly the race this test is meant to catch.
+function fakeAdvisoryLockDb({ session, templateCount = 0 }) {
+  const queries = [];
+  let count = templateCount;
+  const locks = new Map();
+
+  function acquireLock(key) {
+    const state = locks.get(key) ?? { locked: false, waiters: [] };
+    locks.set(key, state);
+    if (!state.locked) {
+      state.locked = true;
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => state.waiters.push(resolve));
+  }
+  function releaseLock(key) {
+    const state = locks.get(key);
+    if (!state) return;
+    const next = state.waiters.shift();
+    if (next) next();
+    else state.locked = false;
+  }
+
+  async function connect() {
+    let heldLockKey = null;
+    async function query(sql, params) {
+      queries.push({ sql, params });
+      if (sql.startsWith('BEGIN')) return { rows: [] };
+      if (sql.startsWith('SELECT pg_advisory_xact_lock')) {
+        heldLockKey = params[0];
+        await acquireLock(heldLockKey);
+        return { rows: [] };
+      }
+      if (sql.startsWith('SELECT COUNT(*)')) {
+        // Snapshot the count now, then yield before returning it, so that
+        // any writer not actually serialized by the advisory lock overlaps
+        // with the others here and reads the same stale count they did,
+        // instead of the delay incidentally masking the race.
+        const snapshot = count;
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        return { rows: [{ count: snapshot }] };
+      }
+      if (sql.startsWith('INSERT INTO templates')) {
+        count += 1;
+        const [id, userId, name, channels, audioMode, activeChannel, volumes, chatBarOpen, now] = params;
+        return {
+          rows: [{
+            id, user_id: userId, name, channels, audio_mode: audioMode, active_channel: activeChannel,
+            volumes, chat_bar_open: chatBarOpen, is_public: 0, created_at: now, updated_at: now,
+          }],
+          rowCount: 1,
+        };
+      }
+      if (sql.startsWith('COMMIT') || sql.startsWith('ROLLBACK')) {
+        if (heldLockKey) {
+          releaseLock(heldLockKey);
+          heldLockKey = null;
+        }
+        return { rows: [] };
+      }
+      return { rows: [], rowCount: 0 };
+    }
+    return { query, release() {} };
+  }
+
+  return {
+    queries,
+    connect,
+    async query(sql, params) {
+      queries.push({ sql, params });
+      if (sql.startsWith('SELECT user_id, expires_at')) return { rows: session ? [session] : [] };
+      return { rows: [], rowCount: 0 };
+    },
+    getCount: () => count,
+  };
+}
+
+test('concurrent template writes near quota do not exceed the per-user cap', async () => {
+  const session = { user_id: 'user-1', expires_at: new Date(Date.now() + 60_000).toISOString() };
+  const db = fakeAdvisoryLockDb({ session, templateCount: 71 });
+  const app = createApp({ db, templateRateLimit: { windowMs: 60_000, max: 100 } });
+
+  await withServer(app, async (baseUrl) => {
+    const responses = await Promise.all(
+      Array.from({ length: 30 }, () =>
+        fetch(`${baseUrl}/api/templates`, {
+          method: 'POST',
+          headers: {
+            Cookie: 'session_id=session-1',
+            Origin: 'http://frontend.test',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name: 'saved', channels: [{ loginName: 'streamer' }], audioMode: 'both' }),
+        }),
+      ),
+    );
+    const statuses = responses.map((r) => r.status);
+    const created = statuses.filter((s) => s === 201).length;
+    const rejected = statuses.filter((s) => s === 429).length;
+    assert.equal(created + rejected, 30, `unexpected statuses: ${statuses.join(',')}`);
+    assert.equal(created, 29, '30 concurrent writers starting at 71 should admit exactly 29 before hitting the 100 cap');
+    assert.equal(db.getCount(), 100, 'template count must land exactly on the cap, never over it');
+  });
+});
+
 test('backend dependency tree has no known qs advisories', async () => {
   const cwd = new URL('..', import.meta.url);
   let stdout;
