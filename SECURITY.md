@@ -13,3 +13,10 @@ feature rather than opening a public issue.
 
 As a solo project, response times aren't guaranteed, but reports will be
 acknowledged and looked at as soon as possible.
+
+## Session logout
+
+Logout is intentionally per-device: it invalidates the session used by the
+current browser and leaves other active sessions signed in. If a future
+account-management flow needs “log out everywhere”, it must explicitly
+invalidate every session belonging to the user.
