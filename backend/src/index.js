@@ -533,28 +533,42 @@ app.post('/api/templates', templateWriteRateLimit, requireSameOrigin, requireAut
 
   const { name, channels, audioMode, activeChannel, volumes, chatBarOpen } = req.body;
   const now = new Date().toISOString();
-  const { rows } = await db.query(
-    `INSERT INTO templates (id, user_id, name, channels, audio_mode, active_channel, volumes, chat_bar_open, created_at, updated_at)
-     SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $9
-     WHERE (SELECT COUNT(*) FROM templates WHERE user_id = $2) < $10
-     RETURNING *`,
-    [
-      crypto.randomUUID(),
-      req.userId,
-      name.trim(),
-      JSON.stringify(channels),
-      audioMode,
-      activeChannel ?? null,
-      volumes ? JSON.stringify(volumes) : null,
-      chatBarOpen ? 1 : 0,
-      now,
-      MAX_TEMPLATES_PER_USER,
-    ],
-  );
-  if (!rows[0]) {
-    return res.status(429).json({ error: 'Template quota reached.' });
+  const client = await db.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [req.userId]);
+    const { rows: countRows } = await client.query(
+      'SELECT COUNT(*)::int AS count FROM templates WHERE user_id = $1',
+      [req.userId],
+    );
+    if (Number(countRows[0]?.count ?? 0) >= MAX_TEMPLATES_PER_USER) {
+      await client.query('ROLLBACK');
+      return res.status(429).json({ error: 'Template quota reached.' });
+    }
+    const { rows } = await client.query(
+      `INSERT INTO templates (id, user_id, name, channels, audio_mode, active_channel, volumes, chat_bar_open, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9)
+       RETURNING *`,
+      [
+        crypto.randomUUID(),
+        req.userId,
+        name.trim(),
+        JSON.stringify(channels),
+        audioMode,
+        activeChannel ?? null,
+        volumes ? JSON.stringify(volumes) : null,
+        chatBarOpen ? 1 : 0,
+        now,
+      ],
+    );
+    await client.query('COMMIT');
+    res.status(201).json(serializeTemplate(rows[0]));
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw err;
+  } finally {
+    client.release();
   }
-  res.status(201).json(serializeTemplate(rows[0]));
 });
 
 app.get('/api/templates/:id', requireAuth, async (req, res) => {

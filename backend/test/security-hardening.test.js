@@ -16,38 +16,41 @@ const { createApp } = await import('../src/index.js');
 
 function fakeDb({ session = null, templateCount = 0 } = {}) {
   const queries = [];
+  async function query(sql, params) {
+    queries.push({ sql, params });
+    if (sql.startsWith('SELECT user_id, expires_at')) {
+      return { rows: session ? [session] : [] };
+    }
+    if (sql.startsWith('SELECT COUNT(*)')) return { rows: [{ count: templateCount }] };
+    if (sql.startsWith('INSERT INTO templates')) {
+      const [id, userId, name, channels, audioMode, activeChannel, volumes, chatBarOpen, now] = params;
+      return {
+        rows: [
+          {
+            id,
+            user_id: userId,
+            name,
+            channels,
+            audio_mode: audioMode,
+            active_channel: activeChannel,
+            volumes,
+            chat_bar_open: chatBarOpen,
+            is_public: 0,
+            created_at: now,
+            updated_at: now,
+          },
+        ],
+        rowCount: 1,
+      };
+    }
+    if (sql.startsWith('DELETE FROM sessions')) return { rowCount: 1, rows: [] };
+    return { rows: [], rowCount: 0 };
+  }
   return {
     queries,
-    async query(sql, params) {
-      queries.push({ sql, params });
-      if (sql.startsWith('SELECT user_id, expires_at')) {
-        return { rows: session ? [session] : [] };
-      }
-      if (sql.startsWith('SELECT COUNT(*)')) return { rows: [{ count: templateCount }] };
-      if (sql.startsWith('INSERT INTO templates')) {
-        if (templateCount >= 100) return { rows: [], rowCount: 0 };
-        const [id, userId, name, channels, audioMode, activeChannel, volumes, chatBarOpen, now] = params;
-        return {
-          rows: [
-            {
-              id,
-              user_id: userId,
-              name,
-              channels,
-              audio_mode: audioMode,
-              active_channel: activeChannel,
-              volumes,
-              chat_bar_open: chatBarOpen,
-              is_public: 0,
-              created_at: now,
-              updated_at: now,
-            },
-          ],
-          rowCount: 1,
-        };
-      }
-      if (sql.startsWith('DELETE FROM sessions')) return { rowCount: 1, rows: [] };
-      return { rows: [], rowCount: 0 };
+    query,
+    async connect() {
+      return { query, release() {} };
     },
   };
 }
@@ -211,6 +214,26 @@ test('template writes enforce field bounds and per-user quota', async () => {
     assert.match(await response.text(), /characters or fewer/);
   });
 
+  const underQuotaDb = fakeDb({ session, templateCount: 99 });
+  const underQuotaApp = createApp({ db: underQuotaDb });
+  await withServer(underQuotaApp, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/templates`, {
+      method: 'POST',
+      headers: {
+        Cookie: 'session_id=session-1',
+        Origin: 'http://frontend.test',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name: 'saved', channels: [{ loginName: 'streamer' }], audioMode: 'both' }),
+    });
+    assert.equal(response.status, 201);
+    const created = await response.json();
+    assert.equal(created.name, 'saved');
+    const sqlSequence = underQuotaDb.queries.map((q) => q.sql.trim().split(/\s+/)[0]);
+    assert.deepEqual(sqlSequence, ['SELECT', 'BEGIN', 'SELECT', 'SELECT', 'INSERT', 'COMMIT']);
+    assert.match(underQuotaDb.queries[2].sql, /pg_advisory_xact_lock/);
+  });
+
   const quotaDb = fakeDb({ session, templateCount: 100 });
   const quotaApp = createApp({ db: quotaDb });
   await withServer(quotaApp, async (baseUrl) => {
@@ -225,6 +248,8 @@ test('template writes enforce field bounds and per-user quota', async () => {
     });
     assert.equal(response.status, 429);
     assert.match(await response.text(), /quota/);
+    const sqlSequence = quotaDb.queries.map((q) => q.sql.trim().split(/\s+/)[0]);
+    assert.deepEqual(sqlSequence, ['SELECT', 'BEGIN', 'SELECT', 'SELECT', 'ROLLBACK']);
   });
 });
 
